@@ -27,9 +27,9 @@ the way up to that cap, the game ends there as a flat draw (all returns 0)
 rather than redealing forever. Card play follows standard suit- and
 trump-following obligations, and scoring uses the standard 162-point deck
 (152 card points + 10 for the last trick), with an all-or-nothing rule: the
-declaring team keeps its points only if it scores strictly more than 81;
-otherwise the defending team collects all 162 points. If one team wins all
-8 tricks ("capot"), the last-trick bonus is 100 instead of 10, so the deck
+declaring team keeps its trick points only if it scores strictly more than the
+defenders; otherwise the defending team collects all trick points. If one team
+wins all 8 tricks ("capot"), the last-trick bonus is 100 instead of 10, so the deck
 is worth 252 points instead of 162, and that full total goes to whichever
 team scores higher (the capot-winning team on success, or the defenders'
 252 on a failed contract).
