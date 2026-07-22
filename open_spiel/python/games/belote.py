@@ -303,9 +303,7 @@ class BeloteState(pyspiel.State):
         # No cards of the led suit: may play trump if possible.
         trump_cards = [c for c in hand if card_suit(c) == trump]
         if trump_cards and led_suit != trump:
-            if (
-                partner_winning
-            ):  # If the partner is currently winning, any card may be played.
+            if partner_winning:  # If the partner is currently winning, any card may be played.
                 return sorted(hand)
 
             trumps_played = [c for _, c in self._trick if card_suit(c) == trump]
