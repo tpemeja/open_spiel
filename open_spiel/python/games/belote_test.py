@@ -137,6 +137,18 @@ class BeloteTest(absltest.TestCase):
     self.assertEqual(state._dealer, (original_dealer + 1) % 4)
     self.assertEqual(state.hands, [[] for _ in range(4)])
 
+  def test_redeal_cap_ends_game_as_flat_draw(self):
+    """Once max_redeals is exceeded, the game ends instead of redealing."""
+    game = belote.BeloteGame({"max_redeals": 1})
+    state = game.new_initial_state()
+    for _ in range(2):  # One full deal, then one redeal, both fully passed.
+      _deal_hands(state)
+      for _ in range(8):  # 4 passes in round 1, 4 in round 2.
+        state.apply_action(belote.PASS_ACTION)
+
+    self.assertTrue(state.is_terminal())
+    self.assertEqual(state.returns(), [0.0] * 4)
+
   def test_must_follow_suit(self):
     """A player holding the led suit must play a card of that suit."""
     game = belote.BeloteGame()

@@ -20,7 +20,11 @@ Classic (non-contract) French Belote for 4 players in 2 fixed partnerships
 5 cards are dealt to each player, the next card of the stock is turned face
 up, and players in turn may take it (round 1) or, if everyone passes, choose
 one of the three other suits (round 2). If everyone passes twice, the deal is
-redealt with the next player as dealer. Card play follows standard suit- and
+redealt with the next player as dealer. This can in principle repeat
+indefinitely, so the number of redeals is capped by the "max_redeals" game
+parameter (default 10); if every deal keeps failing to produce a taker all
+the way up to that cap, the game ends there as a flat draw (all returns 0)
+rather than redealing forever. Card play follows standard suit- and
 trump-following obligations, and scoring uses the standard 162-point deck
 (152 card points + 10 for the last trick), with an all-or-nothing rule: the
 declaring team keeps its points only if it scores strictly more than 81;
@@ -54,6 +58,10 @@ _LAST_TRICK_BONUS = 10
 _CAPOT_LAST_TRICK_BONUS = 100
 _MAX_SCORE_CAPOT = _MAX_SCORE - _LAST_TRICK_BONUS + _CAPOT_LAST_TRICK_BONUS
 _BELOTE_REBELOTE_BONUS = 20
+# Safety valve: real belote redeals with no limit if bidding keeps failing,
+# but that can never terminate in principle, so redeals are capped and the
+# deal ends as a flat draw if the cap is ever exceeded.
+_DEFAULT_MAX_REDEALS = 10
 
 _SUIT_NAMES = ["C", "D", "H", "S"]
 _RANK_NAMES = ["7", "8", "9", "10", "J", "Q", "K", "A"]
@@ -110,21 +118,32 @@ _GAME_TYPE = pyspiel.GameType(
     parameter_specification={
         "dealer": 0,
         "use_belote_rebelote": False,
+        "max_redeals": _DEFAULT_MAX_REDEALS,
     },
 )
-_GAME_INFO = pyspiel.GameInfo(
-    # Card plays (0..31) + pass + take + 4 choose-suit actions.
-    num_distinct_actions=_NUM_CARDS + 2 + _NUM_SUITS,
-    max_chance_outcomes=_NUM_CARDS,
-    num_players=_NUM_PLAYERS,
-    # Loose bounds that also cover a capot (252 instead of 162) and the
-    # optional belote/rebelote bonus.
-    min_utility=-float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
-    max_utility=float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
-    utility_sum=0.0,
-    # Dealing (~32 draws) + bidding (up to 8 calls) + card play (32 plays).
-    max_game_length=_NUM_CARDS + 8 + _NUM_CARDS,
-)
+
+
+def _make_game_info(max_redeals) -> pyspiel.GameInfo:
+  """Creates GameInfo for the given `max_redeals` cap."""
+  return pyspiel.GameInfo(
+      # Card plays (0..31) + pass + take + 4 choose-suit actions.
+      num_distinct_actions=_NUM_CARDS + 2 + _NUM_SUITS,
+      max_chance_outcomes=_NUM_CARDS,
+      num_players=_NUM_PLAYERS,
+      # Loose bounds that also cover a capot (252 instead of 162) and the
+      # optional belote/rebelote bonus.
+      min_utility=-float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
+      max_utility=float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
+      utility_sum=0.0,
+      # Each deal attempt is dealing (~32 draws) + bidding (up to 8 calls);
+      # this can repeat up to max_redeals+1 times before the redeal cap
+      # forces a flat draw, followed by card play (32 plays) if a deal
+      # succeeds.
+      max_game_length=(max_redeals + 1) * (_NUM_CARDS + 8) + _NUM_CARDS,
+  )
+
+
+_GAME_INFO = _make_game_info(_DEFAULT_MAX_REDEALS)
 
 
 def card_suit(card) -> int:
@@ -192,11 +211,14 @@ class BeloteGame(pyspiel.Game):
     """A Python version of Belote."""
 
     def __init__(self, params=None) -> None:
-        super().__init__(_GAME_TYPE, _GAME_INFO, params or {})
+        params = params or {}
+        max_redeals = params.get("max_redeals", _DEFAULT_MAX_REDEALS)
+        super().__init__(_GAME_TYPE, _make_game_info(max_redeals), params)
         self.dealer = self.get_parameters().get("dealer", 0)
         self.use_belote_rebelote = self.get_parameters().get(
             "use_belote_rebelote", False
         )
+        self.max_redeals = max_redeals
 
     def new_initial_state(self) -> "BeloteState":
         """Returns a state corresponding to the start of a game."""
@@ -233,6 +255,9 @@ class BeloteState(pyspiel.State):
 
         self._bid_turn_order = _order_from((self._dealer + 1) % _NUM_PLAYERS)
         self._bid_pointer = 0
+
+        self._max_redeals = game.max_redeals
+        self._redeal_count = 0
 
         self._taker = -1
         self._trump_suit = -1
@@ -432,7 +457,14 @@ class BeloteState(pyspiel.State):
         if action == PASS_ACTION:
             self._bid_pointer += 1
             if self._bid_pointer == _NUM_PLAYERS:
+                if self._redeal_count >= self._max_redeals:
+                    # Redeal cap reached: rather than redealing forever, end
+                    # the game here as a flat draw.
+                    self._phase = "done"
+                    self._returns = [0.0] * _NUM_PLAYERS
+                    return
                 # Everyone passed twice: reshuffle and redeal, dealer rotates.
+                self._redeal_count += 1
                 self._dealer = (self._dealer + 1) % _NUM_PLAYERS
                 self.hands = [[] for _ in range(_NUM_PLAYERS)]
                 self._turned_card = None
