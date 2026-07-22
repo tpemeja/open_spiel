@@ -96,7 +96,7 @@ _TRUMP_STRENGTH_BY_RANK = [_TRUMP_ORDER.index(name) for name in _RANK_NAMES]
 _NONTRUMP_POINTS_BY_RANK = [_NONTRUMP_POINTS[name] for name in _RANK_NAMES]
 _TRUMP_POINTS_BY_RANK = [_TRUMP_POINTS[name] for name in _RANK_NAMES]
 
-# Card are defined as 0, 1, ..., 31
+# Cards are defined as 0, 1, ..., 31
 PASS_ACTION = _NUM_CARDS  # 32
 TAKE_ACTION = _NUM_CARDS + 1  # 33
 CHOOSE_SUIT_ACTION_BASE = _NUM_CARDS + 2  # + suit index (0..3) : 34, 35, 36, 37
