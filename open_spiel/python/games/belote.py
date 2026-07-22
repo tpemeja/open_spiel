@@ -676,6 +676,16 @@ class BeloteObserver:
             pieces.append(f"declarer:{state._taker}")
         if "current_trick" in self.dict:
             pieces.append(f"trick:{[card_string(c) for _, c in state._trick]}")
+        if "cards_played" in self.dict:
+            pieces.append(f"played:{[card_string(c) for c in state._played_cards]}")
+        if "trick_history" in self.dict and state._trick_history:
+            pieces.append(
+                "history:"
+                + "|".join(
+                    ",".join(card_string(c) for c in trick)
+                    for trick in state._trick_history
+                )
+            )
         if "team_points" in self.dict:
             pieces.append(f"points:{state._team_points}")
         return " ".join(str(p) for p in pieces)
