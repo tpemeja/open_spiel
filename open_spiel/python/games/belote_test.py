@@ -110,6 +110,7 @@ class BeloteTest(absltest.TestCase):
 
     chosen_suit = next(s for s in range(4) if s != turned_suit)
     chooser = state.current_player()
+    turned_card = state._turned_card
     state.apply_action(belote.CHOOSE_SUIT_ACTION_BASE + chosen_suit)
     _finish_dealing(state)
 
@@ -118,6 +119,8 @@ class BeloteTest(absltest.TestCase):
     self.assertEqual(state._taker, chooser)
     self.assertEqual(state._trump_suit, chosen_suit)
     self.assertEqual(state._phase, "play")
+    # The player who picks the suit in round 2 keeps the turned card.
+    self.assertIn(turned_card, state.hands[chooser])
     all_cards = sorted(c for hand in state.hands for c in hand)
     self.assertEqual(all_cards, list(range(32)))
 
