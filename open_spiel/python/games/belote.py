@@ -117,7 +117,7 @@ _GAME_TYPE = pyspiel.GameType(
     provides_observation_tensor=True,
     parameter_specification={
         "dealer": 0,
-        "use_belote_rebelote": False,
+        "use_belote_rebelote": True,
         "max_redeals": _DEFAULT_MAX_REDEALS,
     },
 )
