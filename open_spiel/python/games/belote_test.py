@@ -231,7 +231,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, -1)
+    self.assertEqual(state._belote_player, -1)
 
     state._declarer_team = 0
     state._team_points = [100, 62]
@@ -245,7 +245,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, belote.team_of(0))
+    self.assertEqual(belote.team_of(state._belote_player), belote.team_of(0))
 
     state._declarer_team = 0
     state._team_points = [100, 62]
@@ -259,7 +259,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[1] = [6, 5]  # King and Queen of Clubs held by player 1.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, belote.team_of(1))
+    self.assertEqual(belote.team_of(state._belote_player), belote.team_of(1))
 
     state._declarer_team = 0
     state._team_points = [100, 62]
@@ -273,7 +273,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, belote.team_of(0))
+    self.assertEqual(belote.team_of(state._belote_player), belote.team_of(0))
 
     state._declarer_team = 0
     # Declarer team fails its contract outright: 0 trick points, so the
@@ -296,7 +296,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, belote.team_of(0))
+    self.assertEqual(belote.team_of(state._belote_player), belote.team_of(0))
 
     state._declarer_team = 0
     state._team_points = [75, 87]
@@ -315,7 +315,7 @@ class BeloteTest(absltest.TestCase):
     state._trump_suit = 0  # Clubs.
     state.hands[1] = [6, 5]  # King and Queen of Clubs held by player 1.
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, belote.team_of(1))
+    self.assertEqual(belote.team_of(state._belote_player), belote.team_of(1))
 
     state._declarer_team = 0
     state._team_points = [85, 77]
@@ -330,7 +330,7 @@ class BeloteTest(absltest.TestCase):
     state.hands[0] = [6]  # King of Clubs held by player 0.
     state.hands[2] = [5]  # Queen of Clubs held by partner (player 2).
     state._enter_play_phase()
-    self.assertEqual(state._belote_team, -1)
+    self.assertEqual(state._belote_player, -1)
 
   def test_full_random_game_with_belote_rebelote_scores_correctly(self):
     """Same sanity checks as above, with the belote/rebelote bonus enabled."""
@@ -353,7 +353,7 @@ class BeloteTest(absltest.TestCase):
       self.assertEqual(returns[1], returns[3])
       trick_total = sum(state._team_points)
       self.assertIn(trick_total, (162, 252))
-      bonus = belote._BELOTE_REBELOTE_BONUS if state._belote_team >= 0 else 0
+      bonus = belote._BELOTE_REBELOTE_BONUS if state._belote_player >= 0 else 0
       self.assertLessEqual(abs(returns[0]), trick_total + bonus)
 
   def test_capot_awards_100_point_last_trick_bonus(self):
@@ -455,6 +455,160 @@ class BeloteTest(absltest.TestCase):
     self.assertEqual(state.num_distinct_actions(), clone.num_distinct_actions())
     self.assertEqual(state.hands, clone.hands)
     self.assertEqual(state._turned_card, clone._turned_card)
+
+  def test_resample_from_infostate_keeps_own_hand_and_deck_consistent(self):
+    """Resampling must never touch the requesting player's own hand, must
+    preserve every hand's size, and the resampled hands plus already-played
+    cards must still add up to exactly one full deck."""
+    game = belote.BeloteGame({"use_belote_rebelote": True})
+    sampler = np.random.default_rng(0).random
+    for _ in range(5):
+      state = game.new_initial_state()
+      while not state.is_terminal():
+        if state.is_chance_node():
+          outcomes_with_probs = state.chance_outcomes()
+          action_list, prob_list = zip(*outcomes_with_probs)
+          action = np.random.choice(action_list, p=prob_list)
+        else:
+          legal = state.legal_actions()
+          action = np.random.choice(legal)
+        state.apply_action(int(action))
+
+        if state._phase == "play" and not state.is_terminal():
+          for player_id in range(4):
+            clone = state.resample_from_infostate(player_id, sampler)
+            self.assertEqual(clone.hands[player_id], state.hands[player_id])
+            self.assertEqual([len(h) for h in clone.hands],
+                              [len(h) for h in state.hands])
+            dealt = sorted(
+                [c for hand in clone.hands for c in hand] +
+                clone._played_cards)
+            self.assertEqual(dealt, list(range(32)))
+
+  def test_resample_from_infostate_respects_revealed_suit_void(self):
+    """A player who couldn't follow the led suit (or trump) must never be
+    dealt a card of that suit in a resampled hand."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    state._phase = "play"
+    state._trump_suit = 3  # Spades.
+    # Player 0 leads the 7 of Clubs; player 1 (void in Clubs, and forced to
+    # trump since their partner isn't winning) discards the 7 of Hearts,
+    # revealing they hold neither Clubs nor Spades (trump).
+    state._trick = [(0, 0), (1, 16)]
+    state.hands[0] = [1, 25, 9]  # 8C, 8S, 8D.
+    state.hands[1] = [17, 10]  # 8H, 9D.
+    state.hands[2] = [18, 19]
+    state.hands[3] = [26, 2]  # 9S, 9C.
+
+    void_suits, _ = state._infer_void_and_trump_bounds()
+    self.assertEqual(void_suits[1], {0, 3})
+
+    sampler = np.random.default_rng(1).random
+    for _ in range(200):
+      clone = state.resample_from_infostate(2, sampler)
+      for card in clone.hands[1]:
+        self.assertNotIn(belote.card_suit(card), (0, 3))
+
+  def test_resample_from_infostate_respects_trump_strength_bound(self):
+    """A player who didn't overtrump despite being forced to if possible
+    must never be dealt a stronger trump than the one they let stand."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    state._phase = "play"
+    state._trump_suit = 0  # Clubs.
+    # Trump is led with the King (strength 3); player 1 follows with the 7
+    # (strength 0) instead of overtrumping, revealing they hold no trump
+    # stronger than the King.
+    state._trick = [(0, 6), (1, 0)]
+    state.hands[0] = [3, 7]  # 10C (strength 4), AC (strength 5).
+    state.hands[1] = [8, 9]
+    state.hands[2] = [20, 21]
+    state.hands[3] = [16, 17]
+
+    _, max_trump_strength = state._infer_void_and_trump_bounds()
+    self.assertEqual(max_trump_strength[1], 3)
+
+    sampler = np.random.default_rng(2).random
+    for _ in range(200):
+      clone = state.resample_from_infostate(2, sampler)
+      for card in clone.hands[1]:
+        if belote.card_suit(card) == 0:
+          self.assertLessEqual(belote.card_strength(card, 0), 3)
+
+  def test_resample_from_infostate_pins_turned_card_to_taker(self):
+    """The turned card was picked up in full view of the table, so it must
+    stay in the taker's hand in every resampled world."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    state._phase = "play"
+    state._trump_suit = 0
+    state._taker = 1
+    state._turned_card = 5
+    state.hands[1] = [5, 10, 11]
+    state.hands[0] = [1, 2]
+    state.hands[2] = [3, 4]
+    state.hands[3] = [6, 7]
+
+    sampler = np.random.default_rng(3).random
+    for _ in range(200):
+      clone = state.resample_from_infostate(0, sampler)
+      self.assertIn(5, clone.hands[1])
+
+  def test_resample_from_infostate_pins_belote_card_once_announced(self):
+    """Official Belote requires announcing "belote" the moment the first of
+    K+Q of trump is played, revealing the second is still held; the
+    resample must keep it with that player in every resampled world."""
+    game = belote.BeloteGame({"use_belote_rebelote": True})
+    state = game.new_initial_state()
+    state._trump_suit = 0  # Clubs.
+    state._dealer = 0
+    state.hands[1] = [6, 5, 10]  # King and Queen of Clubs, plus one more.
+    state.hands[0] = [1, 2]
+    state.hands[2] = [3, 4]
+    state.hands[3] = [7, 8]
+    state._enter_play_phase()
+    self.assertEqual(state._belote_player, 1)
+
+    state._apply_play_action(6, 1)  # Player 1 plays the King of trump.
+    self.assertNotIn(6, state.hands[1])
+    self.assertIn(5, state.hands[1])  # Queen still held.
+
+    sampler = np.random.default_rng(4).random
+    for _ in range(200):
+      clone = state.resample_from_infostate(0, sampler)
+      self.assertIn(5, clone.hands[1])
+
+  def test_resample_from_infostate_preserves_belote_holder_once_both_played(
+      self):
+    """Once both K and Q of trump have been publicly played by the same
+    player, that's ground truth regardless of which world gets resampled."""
+    game = belote.BeloteGame({"use_belote_rebelote": True})
+    state = game.new_initial_state()
+    state._trump_suit = 0  # Clubs.
+    state._dealer = 0
+    state._use_belote_rebelote = True
+    # Player 1 led trick 0 with the King of trump, so players 0/2/3 (who
+    # didn't follow with trump) are all publicly void in Clubs -- their
+    # remaining hands below must stay consistent with that.
+    state.hands[1] = [10]  # 9D.
+    state.hands[0] = [16, 17]  # 7H, 8H.
+    state.hands[2] = [18, 20]  # 9H, JH.
+    state.hands[3] = [24, 25]  # 7S, 8S.
+    # Trick 0: player 1 (King of Clubs) won it, so leads trick 1 too, where
+    # they immediately play the Queen of Clubs.
+    state._trick_history = [[6, 11, 19, 27]]
+    state._trick_winners = [1]
+    state._tricks_played = 1
+    state._played_cards = [6, 11, 19, 27, 5]
+    state._trick = [(1, 5)]
+    state._belote_player = 1
+
+    sampler = np.random.default_rng(5).random
+    for player_id in (0, 2, 3):
+      for _ in range(100):
+        clone = state.resample_from_infostate(player_id, sampler)
+        self.assertEqual(clone._belote_player, 1)
 
 
 if __name__ == "__main__":

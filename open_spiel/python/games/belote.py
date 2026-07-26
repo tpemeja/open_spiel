@@ -263,7 +263,7 @@ class BeloteState(pyspiel.State):
         self._trump_suit = -1
         self._declarer_team = -1
         self._use_belote_rebelote = game.use_belote_rebelote
-        self._belote_team = -1
+        self._belote_player = -1
 
         self._trick = []
         self._trick_leader = -1
@@ -393,16 +393,40 @@ class BeloteState(pyspiel.State):
         self._tricks_played = 0
         self._team_points = [0, 0]
         if self._use_belote_rebelote:
-            self._belote_team = self._find_belote_team()
+            self._belote_player = self._find_belote_holder()
 
-    def _find_belote_team(self) -> int:
-        """Returns the team id of the player holding K+Q of trump, or -1."""
-        trump_king = self._trump_suit * _NUM_RANKS + _RANK_NAMES.index("K")
-        trump_queen = self._trump_suit * _NUM_RANKS + _RANK_NAMES.index("Q")
-        for player, hand in enumerate(self.hands):
-            if trump_king in hand and trump_queen in hand:
-                return team_of(player)
+    def _trump_king_and_queen(self) -> tuple[int, int]:
+        """Returns the (K, Q) card ids of the current trump suit."""
+        return (
+            self._trump_suit * _NUM_RANKS + _RANK_NAMES.index("K"),
+            self._trump_suit * _NUM_RANKS + _RANK_NAMES.index("Q"),
+        )
+
+    def _find_belote_holder(self, hands=None, tricks=None) -> int:
+        """Returns the id of the player who holds -- or, checked against
+        `hands` other than `self.hands` (see `resample_from_infostate`), has
+        already publicly played -- both K+Q of trump, or -1.
+
+        Cards a player has already played are included alongside `hands`
+        because who-played-what is public information regardless of which
+        hand configuration `hands` represents: if a player is seen to play
+        both the trump K and Q over the course of the game, that reveals the
+        marriage even after the cards have left their hand, and that fact
+        doesn't change across resampled worlds.
+        """
+        hands = self.hands if hands is None else hands
+        tricks = self._reconstruct_tricks() if tricks is None else tricks
+        trump_king, trump_queen = self._trump_king_and_queen()
+        played_by = {p: set() for p in range(_NUM_PLAYERS)}
+        for trick in tricks:
+            for player, card in trick:
+                played_by[player].add(card)
+        for player, hand in enumerate(hands):
+            combined = played_by[player] | set(hand)
+            if trump_king in combined and trump_queen in combined:
+                return player
         return -1
+
 
     def _apply_deal_action(self, card) -> None:
         self._deck.remove(card)
@@ -492,10 +516,9 @@ class BeloteState(pyspiel.State):
         other_points = self._team_points[other_team]
         # 162 normally, or 252 if one team won all 8 tricks (capot).
         trick_total = declarer_points + other_points
-        declarer_bonus = (
-            _BELOTE_REBELOTE_BONUS if self._belote_team == declarer_team else 0
-        )
-        other_bonus = _BELOTE_REBELOTE_BONUS if self._belote_team == other_team else 0
+        belote_team = team_of(self._belote_player) if self._belote_player >= 0 else -1
+        declarer_bonus = _BELOTE_REBELOTE_BONUS if belote_team == declarer_team else 0
+        other_bonus = _BELOTE_REBELOTE_BONUS if belote_team == other_team else 0
         # Contract success/failure is decided on totals that include the
         # belote/rebelote bonus, not on trick points alone.
         if declarer_points + declarer_bonus > other_points + other_bonus:
@@ -565,6 +588,201 @@ class BeloteState(pyspiel.State):
         """Total reward for each player over the course of the game so far."""
         return list(self._returns)
 
+    def _reconstruct_tricks(self) -> list[list[tuple[int, int]]]:
+        """Reconstructs the full trick history, including the current trick if any,
+        as a list of lists of (player, card) pairs."""
+        tricks = []
+        leader = (self._dealer + 1) % _NUM_PLAYERS
+        for i, cards in enumerate(self._trick_history):
+            tricks.append(list(zip(_order_from(leader), cards)))
+            leader = self._trick_winners[i]
+        if self._trick:
+            tricks.append(list(self._trick))
+        return tricks
+
+    def _infer_void_and_trump_bounds(
+        self, tricks=None
+    ) -> tuple[dict[int, set[int]], dict[int, int | None]]:
+        """Infers, from the public information in the current state, which
+        suits each player is known to be void in, and the maximum trump
+        strength each player is known to hold (or None if no upper bound is
+        known)."""
+        trump = self._trump_suit
+        void_suits = {p: set() for p in range(_NUM_PLAYERS)}
+        max_trump_strength = {p: None for p in range(_NUM_PLAYERS)}
+        if trump < 0: # No trump has been chosen yet.
+            return void_suits, max_trump_strength
+
+        for trick in (self._reconstruct_tricks() if tricks is None else tricks):
+            if not trick:
+                continue
+            led_suit = card_suit(trick[0][1])
+            for idx in range(1, len(trick)):
+                player, card = trick[idx]
+                suit = card_suit(card)
+                partial = trick[:idx]
+                current_winner = self._trick_winner(partial)
+                partner_winning = partner_of(player) == current_winner
+                trumps_played_before = [
+                    c for _, c in partial if card_suit(c) == trump
+                ]
+
+                if suit != led_suit:
+                    # Not following was only legal if void in that suit.
+                    void_suits[player].add(trump if led_suit == trump else led_suit)
+                    if suit != trump and led_suit != trump and not partner_winning:
+                        # Trumping in was mandatory here too, so void there.
+                        void_suits[player].add(trump)
+
+                if suit == trump and trumps_played_before:
+                    forced_to_overtrump = led_suit == trump or not partner_winning
+                    highest = max(card_strength(c, trump) for c in trumps_played_before)
+                    if forced_to_overtrump and card_strength(card, trump) <= highest:
+                        # Didn't overtrump though forced to if possible: no
+                        # trump above `highest` remains in hand.
+                        bound = max_trump_strength[player]
+                        if bound is None or highest < bound:
+                            max_trump_strength[player] = highest
+
+        return void_suits, max_trump_strength
+
+    @staticmethod
+    def _shuffle(items, sampler):
+        """Shuffles `items` in place using the given `sampler` to drive
+        randomness."""
+        for i in range(len(items) - 1, 0, -1):
+            j = int(sampler() * (i + 1))
+            items[i], items[j] = items[j], items[i]
+
+    @staticmethod
+    def _bipartite_assign(unseen_cards, players, hand_sizes, allowed, sampler):
+        """Partitions `unseen_cards` among `players` (matching `hand_sizes`)
+        such that `allowed(p, c)` is True for every card `c` assigned to player `p`. 
+        
+        This is always possible because the constraints are derived
+        from a real deal, and the algorithm is a randomized augmenting-path search 
+        that finds a valid assignment in expected polynomial time.
+        """
+        assigned = {p: [] for p in players}
+        player_order = list(players)
+        BeloteState._shuffle(player_order, sampler)
+
+        def try_place(card, visited_players):
+            """Attempts to place `card` with one of the players, 
+            possibly reassigning other cards to make room."""
+            for p in player_order:
+                if p in visited_players or not allowed(p, card):
+                    continue
+                visited_players.add(p)
+                if len(assigned[p]) < hand_sizes[p]: # Player `p` has room for `card`.
+                    assigned[p].append(card)
+                    return True
+                
+                # No room: try to free up a slot by re-homing one of `p`'s
+                # cards elsewhere (the augmenting-path step).
+                bump_order = list(assigned[p])
+                BeloteState._shuffle(bump_order, sampler)
+                for other in bump_order: # Try to reassign `other` to another player.
+                    assigned[p].remove(other)
+                    if try_place(other, visited_players): # If `other` can be placed elsewhere, place `card` with `p`.
+                        assigned[p].append(card)
+                        return True
+                    assigned[p].append(other)
+            return False
+
+        cards = list(unseen_cards)
+        BeloteState._shuffle(cards, sampler)
+
+        for card in cards:
+            try_place(card, set())
+
+        return assigned
+
+    def _public_card_pins(self, player_id, hands) -> dict[int, list[int]]:
+        """Returns a mapping from player id to the list of cards that are known 
+        to be held by that player, based on public information (the turned card and any belote/rebelote cards). 
+        
+        The `hands` argument is used to check if a card is still in a player's hand."""
+        pins = {}
+
+        def pin(player, card):
+            if player == player_id or card not in hands[player]:
+                return
+            cards = pins.setdefault(player, [])
+            if card not in cards:  # turned card and belote card may coincide
+                cards.append(card)
+
+        # Pin the turned card to the taker, if any.
+        if self._turned_card is not None and self._taker >= 0:
+            pin(self._taker, self._turned_card)
+
+        # Pin the other belote card to the belote holder, if any.
+        if self._use_belote_rebelote and self._belote_player >= 0:
+            trump_king, trump_queen = self._trump_king_and_queen()
+            king_played = trump_king in self._played_cards
+            queen_played = trump_queen in self._played_cards
+            if king_played != queen_played:
+                pin(self._belote_player, trump_queen if king_played else trump_king)
+
+        return pins
+
+    def _resample_unseen_cards(
+        self, unseen_cards, other_players, hand_sizes, sampler, tricks
+    ) -> dict[int, list[int]]:
+        """Partitions `unseen_cards` among `other_players` (matching
+        `hand_sizes`), respecting the void/trump-strength constraints from
+        `_infer_void_and_trump_bounds`. See `_bipartite_assign` for why this
+        is always satisfiable."""
+        void_suits, max_trump_strength = self._infer_void_and_trump_bounds(tricks)
+        trump = self._trump_suit
+
+        def allowed(p, c):
+            suit = card_suit(c)
+            bound = max_trump_strength[p]
+            return suit not in void_suits[p] and not (
+                suit == trump and bound is not None and card_strength(c, trump) > bound
+            )
+
+        return self._bipartite_assign(
+            unseen_cards, other_players, hand_sizes, allowed, sampler
+        )
+
+    def resample_from_infostate(self, player_id, sampler) -> "BeloteState":
+        """Returns a clone with the other players' hands resampled, kept
+        consistent with `player_id`'s information state: own hand and public
+        history untouched, cards pinned by `_public_card_pins` kept with
+        their known holder, and the rest resampled by
+        `_resample_unseen_cards`. `sampler` is a zero-argument callable
+        returning a uniform float in [0, 1), used to drive every shuffle so
+        this respects the caller's RNG/seed.
+        """
+        clone = self.clone()
+        other_players = [p for p in range(_NUM_PLAYERS) if p != player_id]
+
+        tricks = self._reconstruct_tricks()
+
+        pinned = self._public_card_pins(player_id, clone.hands)
+        unseen_cards = []
+        hand_sizes = {}
+        for p in other_players:
+            cards = [c for c in clone.hands[p] if c not in pinned.get(p, ())]
+            unseen_cards.extend(cards)
+            hand_sizes[p] = len(cards)
+
+        assignment = self._resample_unseen_cards(
+            unseen_cards, other_players, hand_sizes, sampler, tricks
+        )
+        for p, cards in pinned.items():
+            assignment[p] = [*assignment[p], *cards]
+        for p in other_players:
+            clone.hands[p] = assignment[p]
+
+        # If belote/rebelote is enabled, check if the resampled hands reveal a belote
+        if clone._use_belote_rebelote:
+            clone._belote_player = clone._find_belote_holder(clone.hands, tricks)
+
+        return clone
+
     def __str__(self) -> str:
         """String for debug purposes. No particular semantics are required."""
         lines = [
@@ -581,8 +799,11 @@ class BeloteState(pyspiel.State):
         if self._phase in ("play", "done"):
             lines.append(f"Trick: {[(p, card_string(c)) for p, c in self._trick]}")
             lines.append(f"Team points: {self._team_points}")
-            if self._belote_team >= 0:
-                lines.append(f"Belote/rebelote team: {self._belote_team}")
+            if self._belote_player >= 0:
+                lines.append(
+                    f"Belote/rebelote holder: {self._belote_player}"
+                    f" (team {team_of(self._belote_player)})"
+                )
         return "\n".join(lines)
 
 
