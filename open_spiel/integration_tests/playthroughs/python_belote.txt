@@ -6,7 +6,7 @@ GameType.information = Information.IMPERFECT_INFORMATION
 GameType.long_name = "Python Belote"
 GameType.max_num_players = 4
 GameType.min_num_players = 4
-GameType.parameter_specification = ["dealer", "max_redeals", "use_belote_rebelote"]
+GameType.parameter_specification = ["dealer", "max_redeals"]
 GameType.provides_information_state_string = True
 GameType.provides_information_state_tensor = True
 GameType.provides_observation_string = True
@@ -19,7 +19,7 @@ GameType.utility = Utility.ZERO_SUM
 NumDistinctActions() = 38
 PolicyTensorShape() = [38]
 MaxChanceOutcomes() = 32
-GetParameters() = {dealer=0,max_redeals=100,use_belote_rebelote=False}
+GetParameters() = {dealer=0,max_redeals=100}
 NumPlayers() = 4
 MinUtility() = -272.0
 MaxUtility() = 272.0
@@ -31,7 +31,7 @@ ObservationTensorShape() = player: [4], hand: [32], dealer: [4], turned_card: [3
 ObservationTensorLayout() = TensorLayout.CHW
 ObservationTensorSize() = 147
 MaxGameLength() = 4072
-ToString() = "python_belote(dealer=0,max_redeals=100,use_belote_rebelote=False)"
+ToString() = "python_belote(dealer=0,max_redeals=100)"
 
 # State 0
 # Dealer: 0

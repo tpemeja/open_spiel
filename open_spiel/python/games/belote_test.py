@@ -224,23 +224,9 @@ class BeloteTest(absltest.TestCase):
       # 162 normally, or 252 in the (rare, random-play) case of a capot.
       self.assertIn(sum(state._team_points), (162, 252))
 
-  def test_belote_rebelote_not_applied_by_default(self):
-    """Without the parameter, holding K+Q of trump earns no bonus."""
+  def test_belote_rebelote_bonus_awarded_to_declarer(self):
+    """The holder's team gets a 20-point bonus for holding K+Q of trump."""
     game = belote.BeloteGame()
-    state = game.new_initial_state()
-    state._trump_suit = 0  # Clubs.
-    state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
-    state._enter_play_phase()
-    self.assertEqual(state._belote_player, -1)
-
-    state._declarer_team = 0
-    state._team_points = [100, 62]
-    state._finalize_scores()
-    self.assertEqual(state.returns()[0], 100 - 62)
-
-  def test_belote_rebelote_bonus_awarded_to_declarer_when_enabled(self):
-    """With the parameter on, the holder's team gets a 20-point bonus."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
@@ -252,9 +238,9 @@ class BeloteTest(absltest.TestCase):
     state._finalize_scores()
     self.assertEqual(state.returns()[0], (100 + 20) - 62)
 
-  def test_belote_rebelote_bonus_awarded_to_defenders_when_enabled(self):
+  def test_belote_rebelote_bonus_awarded_to_defenders(self):
     """The bonus goes to whichever team holds K+Q, even if defending."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[1] = [6, 5]  # King and Queen of Clubs held by player 1.
@@ -268,7 +254,7 @@ class BeloteTest(absltest.TestCase):
 
   def test_belote_rebelote_bonus_survives_failed_contract(self):
     """The bonus is paid even if the holder's team scores 0 trick points."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
@@ -291,7 +277,7 @@ class BeloteTest(absltest.TestCase):
     exceeds the defenders' 87, so the contract must succeed and the
     declarer keeps its 75 points (plus the 20-point bonus).
     """
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6, 5]  # King and Queen of Clubs held by player 0.
@@ -310,7 +296,7 @@ class BeloteTest(absltest.TestCase):
     the defenders hold belote (77+20=97 > 85), so the contract fails and
     the declarer keeps nothing.
     """
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[1] = [6, 5]  # King and Queen of Clubs held by player 1.
@@ -324,7 +310,7 @@ class BeloteTest(absltest.TestCase):
 
   def test_belote_rebelote_requires_same_player_to_hold_both_cards(self):
     """Splitting K and Q of trump across partners does not earn the bonus."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state.hands[0] = [6]  # King of Clubs held by player 0.
@@ -333,8 +319,8 @@ class BeloteTest(absltest.TestCase):
     self.assertEqual(state._belote_player, -1)
 
   def test_full_random_game_with_belote_rebelote_scores_correctly(self):
-    """Same sanity checks as above, with the belote/rebelote bonus enabled."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    """Same sanity checks as above, exercising the belote/rebelote bonus."""
+    game = belote.BeloteGame()
     for _ in range(20):
       state = game.new_initial_state()
       while not state.is_terminal():
@@ -460,7 +446,7 @@ class BeloteTest(absltest.TestCase):
     """Resampling must never touch the requesting player's own hand, must
     preserve every hand's size, and the resampled hands plus already-played
     cards must still add up to exactly one full deck."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     sampler = np.random.default_rng(0).random
     for _ in range(5):
       state = game.new_initial_state()
@@ -559,7 +545,7 @@ class BeloteTest(absltest.TestCase):
     """Official Belote requires announcing "belote" the moment the first of
     K+Q of trump is played, revealing the second is still held; the
     resample must keep it with that player in every resampled world."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state._dealer = 0
@@ -583,11 +569,10 @@ class BeloteTest(absltest.TestCase):
       self):
     """Once both K and Q of trump have been publicly played by the same
     player, that's ground truth regardless of which world gets resampled."""
-    game = belote.BeloteGame({"use_belote_rebelote": True})
+    game = belote.BeloteGame()
     state = game.new_initial_state()
     state._trump_suit = 0  # Clubs.
     state._dealer = 0
-    state._use_belote_rebelote = True
     # Player 1 led trick 0 with the King of trump, so players 0/2/3 (who
     # didn't follow with trump) are all publicly void in Clubs -- their
     # remaining hands below must stay consistent with that.

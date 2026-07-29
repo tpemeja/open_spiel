@@ -35,11 +35,10 @@ team scores higher (the capot-winning team on success, or the defenders'
 252 on a failed contract).
 
 The "belote/rebelote" bonus (20 extra points awarded to whichever team has a
-single player holding both the King and Queen of the trump suit) is optional
-and controlled via the "use_belote_rebelote" game parameter (off by default).
-When enabled, the bonus counts toward the declaring team's contract
-threshold (its own or the defenders', per official rules) and is always
-credited to the holder's team, win or lose.
+single player holding both the King and Queen of the trump suit) is always
+applied, per official rules. The bonus counts toward the declaring team's
+contract threshold (its own or the defenders', per official rules) and is
+always credited to the holder's team, win or lose.
 
 Official rules (Fédération Française de Belote):
 https://www.ffbelote.org/wp-content/uploads/2016/01/regles-officielles-de-la-Belote-27-01-2016.pdf
@@ -117,7 +116,6 @@ _GAME_TYPE = pyspiel.GameType(
     provides_observation_tensor=True,
     parameter_specification={
         "dealer": 0,
-        "use_belote_rebelote": True,
         "max_redeals": _DEFAULT_MAX_REDEALS,
     },
 )
@@ -131,7 +129,7 @@ def _make_game_info(max_redeals) -> pyspiel.GameInfo:
       max_chance_outcomes=_NUM_CARDS,
       num_players=_NUM_PLAYERS,
       # Loose bounds that also cover a capot (252 instead of 162) and the
-      # optional belote/rebelote bonus.
+      # belote/rebelote bonus.
       min_utility=-float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
       max_utility=float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
       utility_sum=0.0,
@@ -215,9 +213,6 @@ class BeloteGame(pyspiel.Game):
         max_redeals = params.get("max_redeals", _DEFAULT_MAX_REDEALS)
         super().__init__(_GAME_TYPE, _make_game_info(max_redeals), params)
         self.dealer = self.get_parameters().get("dealer", 0)
-        self.use_belote_rebelote = self.get_parameters().get(
-            "use_belote_rebelote", False
-        )
         self.max_redeals = max_redeals
 
     def new_initial_state(self) -> "BeloteState":
@@ -262,7 +257,6 @@ class BeloteState(pyspiel.State):
         self._taker = -1
         self._trump_suit = -1
         self._declarer_team = -1
-        self._use_belote_rebelote = game.use_belote_rebelote
         self._belote_player = -1
 
         self._trick = []
@@ -392,8 +386,7 @@ class BeloteState(pyspiel.State):
         self._trick = []
         self._tricks_played = 0
         self._team_points = [0, 0]
-        if self._use_belote_rebelote:
-            self._belote_player = self._find_belote_holder()
+        self._belote_player = self._find_belote_holder()
 
     def _trump_king_and_queen(self) -> tuple[int, int]:
         """Returns the (K, Q) card ids of the current trump suit."""
@@ -717,7 +710,7 @@ class BeloteState(pyspiel.State):
             pin(self._taker, self._turned_card)
 
         # Pin the other belote card to the belote holder, if any.
-        if self._use_belote_rebelote and self._belote_player >= 0:
+        if self._belote_player >= 0:
             trump_king, trump_queen = self._trump_king_and_queen()
             king_played = trump_king in self._played_cards
             queen_played = trump_queen in self._played_cards
@@ -777,9 +770,8 @@ class BeloteState(pyspiel.State):
         for p in other_players:
             clone.hands[p] = assignment[p]
 
-        # If belote/rebelote is enabled, check if the resampled hands reveal a belote
-        if clone._use_belote_rebelote:
-            clone._belote_player = clone._find_belote_holder(clone.hands, tricks)
+        # Check if the resampled hands reveal a belote/rebelote holder.
+        clone._belote_player = clone._find_belote_holder(clone.hands, tricks)
 
         return clone
 
