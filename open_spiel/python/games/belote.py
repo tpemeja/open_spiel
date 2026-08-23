@@ -36,9 +36,14 @@ team scores higher (the capot-winning team on success, or the defenders'
 
 The "belote/rebelote" bonus (20 extra points awarded to whichever team has a
 single player holding both the King and Queen of the trump suit) is always
-applied, per official rules. The bonus counts toward the declaring team's
-contract threshold (its own or the defenders', per official rules) and is
-always credited to the holder's team, win or lose.
+applied. Per official rules, this bonus actually requires the holder to
+announce "belote" then "rebelote" when playing the first and second of those
+two cards respectively, and is forfeited if either announcement is omitted;
+this implementation simplifies that away and always grants it to whichever
+team holds the marriage, with no announcement action in the game. The 20
+points themselves, and the way they're used, do follow official rules: they
+count toward the declaring team's contract threshold (its own or the
+defenders') and are always credited to the holder's team, win or lose.
 
 Official rules (Fédération Française de Belote):
 https://www.ffbelote.org/wp-content/uploads/2016/01/regles-officielles-de-la-Belote-27-01-2016.pdf
@@ -818,13 +823,28 @@ class BeloteObserver:
             pieces.append(("turned_card", _NUM_CARDS, (_NUM_CARDS,)))
             pieces.append(("trump_suit", _NUM_SUITS + 1, (_NUM_SUITS + 1,)))
             pieces.append(("declarer", _NUM_PLAYERS, (_NUM_PLAYERS,)))
-            pieces.append(("current_trick", _NUM_CARDS, (_NUM_CARDS,)))
+            # One card-slot per player (indexed by absolute player id) rather
+            # than a single unordered bag, so which player played which card
+            # -- and hence the led suit and who currently holds the trick --
+            # can be recovered from the tensor. Same convention as e.g. the
+            # C++ Euchre implementation's trick encoding.
+            pieces.append(
+                ("current_trick", _NUM_PLAYERS * _NUM_CARDS, (_NUM_PLAYERS, _NUM_CARDS))
+            )
             pieces.append(("cards_played", _NUM_CARDS, (_NUM_CARDS,)))
             pieces.append(("team_points", 2, (2,)))
             if iig_obs_type.perfect_recall:
                 num_tricks = _NUM_CARDS // _NUM_PLAYERS
+                pieces.append((
+                    "trick_history",
+                    num_tricks * _NUM_PLAYERS * _NUM_CARDS,
+                    (num_tricks, _NUM_PLAYERS, _NUM_CARDS),
+                ))
+                # Winner of each completed trick; combined with `dealer` (who
+                # leads trick 0) this lets a consumer chain trick leaders
+                # forward (the winner of trick i leads trick i+1).
                 pieces.append(
-                    ("trick_history", num_tricks * _NUM_CARDS, (num_tricks, _NUM_CARDS))
+                    ("trick_winners", num_tricks * _NUM_PLAYERS, (num_tricks, _NUM_PLAYERS))
                 )
 
         total_size = sum(size for name, size, shape in pieces)
@@ -852,9 +872,21 @@ class BeloteObserver:
             self.dict["trump_suit"][index] = 1
         if "declarer" in self.dict and state._taker >= 0:
             self.dict["declarer"][state._taker] = 1
-        if "current_trick" in self.dict:
-            for _, card in state._trick:
-                self.dict["current_trick"][card] = 1
+        if "current_trick" in self.dict or "trick_history" in self.dict:
+            tricks = state._reconstruct_tricks()
+            num_completed = len(state._trick_history)
+            completed_tricks = tricks[:num_completed]
+            current_trick = tricks[num_completed:]
+            if "current_trick" in self.dict and current_trick:
+                for trick_player, card in current_trick[0]:
+                    self.dict["current_trick"][trick_player][card] = 1
+            if "trick_history" in self.dict:
+                for trick_idx, trick in enumerate(completed_tricks):
+                    for trick_player, card in trick:
+                        self.dict["trick_history"][trick_idx][trick_player][card] = 1
+        if "trick_winners" in self.dict:
+            for trick_idx, winner in enumerate(state._trick_winners):
+                self.dict["trick_winners"][trick_idx][winner] = 1
         if "cards_played" in self.dict:
             for card in state._played_cards:
                 self.dict["cards_played"][card] = 1
@@ -865,10 +897,6 @@ class BeloteObserver:
             self.dict["team_points"][1] = state._team_points[1] / float(
                 _MAX_SCORE_CAPOT
             )
-        if "trick_history" in self.dict:
-            for trick_idx, cards in enumerate(state._trick_history):
-                for card in cards:
-                    self.dict["trick_history"][trick_idx][card] = 1
 
     def string_from(self, state, player) -> str:
         """Observation of `state` from the PoV of `player`, as a string."""
