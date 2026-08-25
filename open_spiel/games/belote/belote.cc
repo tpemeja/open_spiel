@@ -84,8 +84,8 @@ struct SmallCardList {
   const int* end() const { return cards.data() + count; }
 };
 
-std::vector<Player> OrderFrom(Player start) {
-  std::vector<Player> order(kNumPlayers);
+std::array<Player, kNumPlayers> OrderFrom(Player start) {
+  std::array<Player, kNumPlayers> order{};
   for (int i = 0; i < kNumPlayers; ++i) {
     order[i] = (start + i) % kNumPlayers;
   }
@@ -94,10 +94,9 @@ std::vector<Player> OrderFrom(Player start) {
 
 // Deal order for the first 5 cards/player (3 then 2) plus the turned card.
 // A destination of kInvalidPlayer means "turn the next stock card face up".
-std::vector<Player> InitialDealSchedule(Player dealer) {
-  std::vector<Player> order = OrderFrom((dealer + 1) % kNumPlayers);
-  std::vector<Player> schedule;
-  schedule.reserve(kNumPlayers * 5 + 1);
+DealSchedule InitialDealSchedule(Player dealer) {
+  std::array<Player, kNumPlayers> order = OrderFrom((dealer + 1) % kNumPlayers);
+  DealSchedule schedule;
   for (Player player : order) {
     for (int i = 0; i < 3; ++i) schedule.push_back(player);
   }
@@ -125,12 +124,12 @@ void ShuffleInPlace(std::vector<int>& items,
 // real deal; implemented as a randomized augmenting-path search that finds
 // a valid assignment in expected polynomial time. Mirrors belote.py's
 // `_bipartite_assign`.
-std::array<std::vector<int>, kNumPlayers> BipartiteAssign(
-    const std::vector<int>& unseen_cards, const std::vector<Player>& players,
-    const std::array<int, kNumPlayers>& hand_sizes,
-    const std::function<bool(Player, int)>& allowed,
-    const std::function<double()>& rng) {
-  std::array<std::vector<int>, kNumPlayers> assigned;
+Hands BipartiteAssign(const std::vector<int>& unseen_cards,
+                      const std::vector<Player>& players,
+                      const std::array<int, kNumPlayers>& hand_sizes,
+                      const std::function<bool(Player, int)>& allowed,
+                      const std::function<double()>& rng) {
+  Hands assigned;
   std::vector<int> player_order(players.begin(), players.end());
   ShuffleInPlace(player_order, rng);
 
@@ -146,7 +145,7 @@ std::array<std::vector<int>, kNumPlayers> BipartiteAssign(
         return true;
       }
       // No room: try to free up a slot by re-homing one of `p`'s cards.
-      std::vector<int> bump_order = assigned[p];
+      std::vector<int> bump_order(assigned[p].begin(), assigned[p].end());
       ShuffleInPlace(bump_order, rng);
       for (int other : bump_order) {
         assigned[p].erase(
@@ -220,11 +219,6 @@ BeloteState::BeloteState(std::shared_ptr<const Game> game, Player dealer,
       max_redeals_(max_redeals) {
   in_deck_.fill(true);
   deck_size_ = kNumCards;
-  for (auto& hand : hands_) hand.reserve(kNumRanks);
-  played_cards_.reserve(kNumCards);
-  trick_.reserve(kNumPlayers);
-  trick_history_.reserve(kNumCards / kNumPlayers);
-  trick_winners_.reserve(kNumCards / kNumPlayers);
 }
 
 Player BeloteState::CurrentPlayer() const {
@@ -264,7 +258,7 @@ std::vector<Action> BeloteState::LegalActions() const {
 }
 
 std::vector<Action> BeloteState::LegalCardPlays(Player player) const {
-  const std::vector<int>& hand = hands_[player];
+  const auto& hand = hands_[player];
   if (trick_.empty()) {
     // No cards played for the trick, any card may be led.
     std::vector<Action> actions(hand.begin(), hand.end());
@@ -377,8 +371,7 @@ bool BeloteState::IsBetter(int card, int other, int led_suit) const {
   return false;
 }
 
-Player BeloteState::TrickWinner(
-    const std::vector<std::pair<Player, int>>& trick) const {
+Player BeloteState::TrickWinner(const Trick& trick) const {
   int led_suit = CardSuit(trick[0].second);
   Player best_player = trick[0].first;
   int best_card = trick[0].second;
@@ -412,10 +405,10 @@ void BeloteState::EnterPlayPhase() {
 }
 
 Player BeloteState::FindBeloteHolder(const Hands& hands,
-                                     const std::vector<Trick>& tricks) const {
+                                     const TrickList& tricks) const {
   int trump_king = trump_suit_ * kNumRanks + 6;  // Rank index of "K".
   int trump_queen = trump_suit_ * kNumRanks + 5;  // Rank index of "Q".
-  std::array<std::vector<int>, kNumPlayers> played_by;
+  std::array<absl::InlinedVector<int, kNumRanks>, kNumPlayers> played_by;
   for (const Trick& trick : tricks) {
     for (const auto& [player, card] : trick) played_by[player].push_back(card);
   }
@@ -433,26 +426,29 @@ Player BeloteState::FindBeloteHolder() const {
   return FindBeloteHolder(hands_, ReconstructTricks());
 }
 
-std::vector<Trick> BeloteState::ReconstructTricks() const {
-  std::vector<Trick> tricks;
-  tricks.reserve(trick_history_.size() + 1);
+TrickList BeloteState::ReconstructCompletedTricks() const {
+  TrickList tricks;
   Player leader = (dealer_ + 1) % kNumPlayers;
-  for (int i = 0; i < static_cast<int>(trick_history_.size()); ++i) {
-    std::vector<Player> order = OrderFrom(leader);
+  for (int i = 0; i < tricks_played_; ++i) {
+    std::array<Player, kNumPlayers> order = OrderFrom(leader);
     Trick trick;
-    trick.reserve(kNumPlayers);
     for (int j = 0; j < kNumPlayers; ++j) {
       trick.emplace_back(order[j], trick_history_[i][j]);
     }
     tricks.push_back(std::move(trick));
     leader = trick_winners_[i];
   }
+  return tricks;
+}
+
+TrickList BeloteState::ReconstructTricks() const {
+  TrickList tricks = ReconstructCompletedTricks();
   if (!trick_.empty()) tricks.push_back(trick_);
   return tricks;
 }
 
 VoidAndTrumpBounds BeloteState::InferVoidAndTrumpBounds(
-    const std::vector<Trick>& tricks) const {
+    const TrickList& tricks) const {
   VoidAndTrumpBounds result;
   int trump = trump_suit_;
   if (trump < 0) return result;
@@ -499,9 +495,9 @@ VoidAndTrumpBounds BeloteState::InferVoidAndTrumpBounds(
   return result;
 }
 
-std::array<std::vector<int>, kNumPlayers> BeloteState::PublicCardPins(
+std::array<absl::InlinedVector<int, 2>, kNumPlayers> BeloteState::PublicCardPins(
     Player player_id) const {
-  std::array<std::vector<int>, kNumPlayers> pins;
+  std::array<absl::InlinedVector<int, 2>, kNumPlayers> pins;
   auto pin = [&](Player player, int card) {
     if (player == player_id) return;
     if (!absl::c_linear_search(hands_[player], card)) return;
@@ -542,7 +538,7 @@ void BeloteState::ApplyDealAction(int card) {
   }
 }
 
-void BeloteState::StartCompletionDeal(std::vector<Player> schedule,
+void BeloteState::StartCompletionDeal(DealSchedule schedule,
                                       Phase next_phase) {
   deal_schedule_ = std::move(schedule);
   deal_index_ = 0;
@@ -550,15 +546,14 @@ void BeloteState::StartCompletionDeal(std::vector<Player> schedule,
   phase_ = Phase::kDeal;
 }
 
-std::vector<Player> BeloteState::CompletionScheduleAfterTake(
-    Player taker) const {
+DealSchedule BeloteState::CompletionScheduleAfterTake(Player taker) const {
   // 3 cards to each non-taker, 2 to the taker (who already holds the turned
   // card).
-  std::vector<Player> order = OrderFrom((dealer_ + 1) % kNumPlayers);
+  std::array<Player, kNumPlayers> order = OrderFrom((dealer_ + 1) % kNumPlayers);
   std::array<int, kNumPlayers> target_counts{};
   std::array<int, kNumPlayers> dealt_counts{};
   for (Player p : order) target_counts[p] = (p == taker) ? 2 : 3;
-  std::vector<Player> schedule;
+  DealSchedule schedule;
   bool remaining = true;
   while (remaining) {
     remaining = false;
@@ -597,7 +592,7 @@ void BeloteState::ApplyBid2Action(int action, Player player) {
         // Redeal cap reached: rather than redealing forever, end the game
         // here as a flat draw.
         phase_ = Phase::kGameOver;
-        returns_.assign(kNumPlayers, 0.0);
+        returns_.fill(0.0);
         return;
       }
       // Everyone passed twice: reshuffle and redeal, dealer rotates.
@@ -666,18 +661,18 @@ void BeloteState::ApplyPlayAction(int card, Player player) {
   int points = 0;
   for (const auto& [p, c] : trick_) points += CardPoints(c, trump_suit_);
   ++tricks_played_;
-  trick_winners_.push_back(winner);
-  if (tricks_played_ == kNumCards / kNumPlayers) {
-    bool is_capot = absl::c_all_of(trick_winners_, [winner](Player w) {
-      return TeamOf(w) == TeamOf(winner);
-    });
+  int trick_index = tricks_played_ - 1;
+  trick_winners_[trick_index] = winner;
+  if (tricks_played_ == kNumTricks) {
+    bool is_capot = std::all_of(
+        trick_winners_.begin(), trick_winners_.begin() + tricks_played_,
+        [winner](Player w) { return TeamOf(w) == TeamOf(winner); });
     points += is_capot ? kCapotLastTrickBonus : kLastTrickBonus;
   }
   team_points_[TeamOf(winner)] += points;
-  std::vector<int> cards;
-  cards.reserve(kNumPlayers);
-  for (const auto& [p, c] : trick_) cards.push_back(c);
-  trick_history_.push_back(std::move(cards));
+  for (int j = 0; j < kNumPlayers; ++j) {
+    trick_history_[trick_index][j] = trick_[j].second;
+  }
 
   trick_.clear();
   trick_leader_ = winner;
@@ -727,8 +722,9 @@ std::string PhaseString(Phase phase) {
   return "";
 }
 
-std::string HandString(const std::vector<int>& hand) {
-  std::vector<int> sorted_hand = hand;
+template <typename Container>
+std::string HandString(const Container& hand) {
+  std::vector<int> sorted_hand(hand.begin(), hand.end());
   absl::c_sort(sorted_hand);
   return absl::StrCat("[", absl::StrJoin(sorted_hand, ", "), "]");
 }
@@ -790,13 +786,10 @@ void BeloteState::WriteObservation(Player player, bool perfect_recall,
   // single unordered bag, so which player played which card -- and hence
   // the led suit and who currently holds the trick -- can be recovered from
   // the tensor. Same convention as the C++ Euchre implementation's trick
-  // encoding.
-  std::vector<Trick> tricks = ReconstructTricks();
-  int num_completed = static_cast<int>(trick_history_.size());
-  if (static_cast<int>(tricks.size()) > num_completed) {
-    for (const auto& [p, c] : tricks[num_completed]) {
-      it[p * kNumCards + c] = 1;
-    }
+  // encoding. `trick_` is already exactly these (player, card) pairs in
+  // play order, so no reconstruction is needed here.
+  for (const auto& [p, c] : trick_) {
+    it[p * kNumCards + c] = 1;
   }
   it += kNumPlayers * kNumCards;
 
@@ -806,18 +799,19 @@ void BeloteState::WriteObservation(Player player, bool perfect_recall,
   it[1] = team_points_[1] / static_cast<float>(kMaxScoreCapot);
   it += 2;
   if (perfect_recall) {
-    int num_tricks = kNumCards / kNumPlayers;
-    for (int trick_idx = 0; trick_idx < num_completed; ++trick_idx) {
+    // Only reconstructed for InformationStateTensor: ObservationTensor has
+    // no use for the completed-trick history, so it never pays this cost.
+    TrickList tricks = ReconstructCompletedTricks();
+    for (int trick_idx = 0; trick_idx < tricks_played_; ++trick_idx) {
       for (const auto& [p, c] : tricks[trick_idx]) {
         it[(trick_idx * kNumPlayers + p) * kNumCards + c] = 1;
       }
     }
-    it += num_tricks * kNumPlayers * kNumCards;
+    it += kNumTricks * kNumPlayers * kNumCards;
     // Winner of each completed trick; combined with `dealer` (who leads
     // trick 0) this lets a consumer chain trick leaders forward (the winner
     // of trick i leads trick i+1).
-    for (int trick_idx = 0; trick_idx < static_cast<int>(trick_winners_.size());
-         ++trick_idx) {
+    for (int trick_idx = 0; trick_idx < tricks_played_; ++trick_idx) {
       it[trick_idx * kNumPlayers + trick_winners_[trick_idx]] = 1;
     }
   }
@@ -872,8 +866,8 @@ std::unique_ptr<State> BeloteState::ResampleFromInfostate(
     int player_id, std::function<double()> rng) const {
   std::unique_ptr<BeloteState> state(new BeloteState(*this));
 
-  std::vector<Trick> tricks = ReconstructTricks();
-  std::array<std::vector<int>, kNumPlayers> pinned =
+  TrickList tricks = ReconstructTricks();
+  std::array<absl::InlinedVector<int, 2>, kNumPlayers> pinned =
       PublicCardPins(player_id);
 
   std::vector<Player> other_players;
@@ -900,7 +894,7 @@ std::unique_ptr<State> BeloteState::ResampleFromInfostate(
     return !(suit == trump && bound != -1 && CardStrength(card, trump) > bound);
   };
 
-  std::array<std::vector<int>, kNumPlayers> assignment =
+  Hands assignment =
       BipartiteAssign(unseen_cards, other_players, hand_sizes, allowed, rng);
   for (Player p : other_players) {
     for (int c : pinned[p]) assignment[p].push_back(c);

@@ -56,6 +56,7 @@
 #include <utility>
 #include <vector>
 
+#include "open_spiel/abseil-cpp/absl/container/inlined_vector.h"
 #include "open_spiel/spiel.h"
 #include "open_spiel/spiel_globals.h"
 
@@ -76,6 +77,10 @@ inline constexpr int kBeloteRebeloteBonus = 20;
 // but that can never terminate in principle, so redeals are capped and the
 // deal ends as a flat draw if the cap is ever exceeded.
 inline constexpr int kDefaultMaxRedeals = 10;
+// Longest possible deal_schedule_: the initial deal (3+2 cards to each of 4
+// players, plus the turned card).
+inline constexpr int kMaxDealScheduleSize = kNumPlayers * 5 + 1;
+inline constexpr int kNumTricks = kNumCards / kNumPlayers;
 
 // Card actions are 0..31 (card = suit * kNumRanks + rank).
 inline constexpr int kPassAction = kNumCards;               // 32
@@ -99,9 +104,17 @@ inline int TeamOf(Player player) { return player % 2; }
 inline Player PartnerOf(Player player) { return (player + 2) % kNumPlayers; }
 
 // A trick in progress or completed, as (player, card) pairs in play order.
-using Trick = std::vector<std::pair<Player, int>>;
-// One hand of cards per player, indexed by absolute player id.
-using Hands = std::array<std::vector<int>, kNumPlayers>;
+// Always at most kNumPlayers entries, so this never allocates on the heap.
+using Trick = absl::InlinedVector<std::pair<Player, int>, kNumPlayers>;
+// A run of tricks (e.g. every trick played so far, current one included).
+// Always at most kNumTricks + 1 entries, so this never allocates either.
+using TrickList = absl::InlinedVector<Trick, kNumTricks + 1>;
+// One hand of cards per player, indexed by absolute player id. Always at
+// most kNumRanks cards, so this never allocates on the heap.
+using Hands = std::array<absl::InlinedVector<int, kNumRanks>, kNumPlayers>;
+// A deal schedule (which player, or kInvalidPlayer for "turn face up", gets
+// each successive card). Always at most kMaxDealScheduleSize entries.
+using DealSchedule = absl::InlinedVector<Player, kMaxDealScheduleSize>;
 
 // Void suits and trump-strength upper bounds inferred per player from public
 // play, used to constrain opponent hand resampling. `max_trump_strength[p]`
@@ -119,7 +132,9 @@ class BeloteState : public State {
   std::string ActionToString(Player player, Action action) const override;
   std::string ToString() const override;
   bool IsTerminal() const override { return phase_ == Phase::kGameOver; }
-  std::vector<double> Returns() const override { return returns_; }
+  std::vector<double> Returns() const override {
+    return std::vector<double>(returns_.begin(), returns_.end());
+  }
   std::string InformationStateString(Player player) const override;
   std::string ObservationString(Player player) const override;
   void InformationStateTensor(Player player,
@@ -146,31 +161,31 @@ class BeloteState : public State {
   // played the card(s) in `tricks` -- to hold (or have held) both the King
   // and Queen of trump, or kInvalidPlayer. The no-argument overload checks
   // the current hands and play history.
-  Player FindBeloteHolder(const Hands& hands,
-                          const std::vector<Trick>& tricks) const;
+  Player FindBeloteHolder(const Hands& hands, const TrickList& tricks) const;
   Player FindBeloteHolder() const;
   void ApplyDealAction(int card);
-  void StartCompletionDeal(std::vector<Player> schedule, Phase next_phase);
-  std::vector<Player> CompletionScheduleAfterTake(Player taker) const;
+  void StartCompletionDeal(DealSchedule schedule, Phase next_phase);
+  DealSchedule CompletionScheduleAfterTake(Player taker) const;
   void ApplyBid1Action(int action, Player player);
   void ApplyBid2Action(int action, Player player);
   void ApplyPlayAction(int card, Player player);
   void FinalizeScores();
   void WriteObservation(Player player, bool perfect_recall,
                         absl::Span<float> values) const;
-  // Rebuilds the full trick history, including the current partial trick if
-  // any, as (player, card) pairs in play order. Trick 0 is led by the
-  // player after the dealer; trick i>0 is led by the winner of trick i-1.
-  std::vector<Trick> ReconstructTricks() const;
+  // Rebuilds the completed tricks (not including the current partial trick),
+  // as (player, card) pairs in play order. Trick 0 is led by the player
+  // after the dealer; trick i>0 is led by the winner of trick i-1.
+  TrickList ReconstructCompletedTricks() const;
+  // As above, plus the current partial trick (if any) appended at the end.
+  TrickList ReconstructTricks() const;
   // Infers void suits and trump-strength upper bounds per player from
   // `tricks`, for constraining opponent hand resampling.
-  VoidAndTrumpBounds InferVoidAndTrumpBounds(
-      const std::vector<Trick>& tricks) const;
+  VoidAndTrumpBounds InferVoidAndTrumpBounds(const TrickList& tricks) const;
   // Cards whose holder is public knowledge beyond `player_id`'s own hand:
   // the turned card (pinned to the taker) and, once exactly one of the
   // trump King/Queen has been publicly played, the other (pinned to the
-  // belote holder).
-  std::array<std::vector<int>, kNumPlayers> PublicCardPins(
+  // belote holder). At most 2 cards can ever be pinned to one player.
+  std::array<absl::InlinedVector<int, 2>, kNumPlayers> PublicCardPins(
       Player player_id) const;
 
   Player dealer_;
@@ -183,11 +198,11 @@ class BeloteState : public State {
   int turned_card_ = kInvalidAction;
 
   Phase phase_ = Phase::kDeal;
-  std::vector<Player> deal_schedule_;
+  DealSchedule deal_schedule_;
   int deal_index_ = 0;
   Phase after_deal_phase_ = Phase::kBid1;
 
-  std::vector<Player> bid_turn_order_;
+  std::array<Player, kNumPlayers> bid_turn_order_{};
   int bid_pointer_ = 0;
 
   const int max_redeals_;
@@ -202,11 +217,18 @@ class BeloteState : public State {
   Player trick_leader_ = kInvalidPlayer;
   Player current_player_play_ = kInvalidPlayer;
   int tricks_played_ = 0;
-  std::vector<int> played_cards_;
-  std::vector<std::vector<int>> trick_history_;
-  std::vector<Player> trick_winners_;
+  // At most kNumCards entries; never allocates on the heap.
+  absl::InlinedVector<int, kNumCards> played_cards_;
+  // Cards of each completed trick, indexed [trick][seat position within
+  // that trick] (not by absolute player id -- see ReconstructTricks, which
+  // recovers the actual player via the trick's leader chain). Only the
+  // first tricks_played_ rows are populated.
+  std::array<std::array<int, kNumPlayers>, kNumTricks> trick_history_{};
+  // Winner of each completed trick; only the first tricks_played_ entries
+  // are populated.
+  std::array<Player, kNumTricks> trick_winners_{};
   std::array<int, 2> team_points_ = {0, 0};
-  std::vector<double> returns_ = std::vector<double>(kNumPlayers, 0.0);
+  std::array<double, kNumPlayers> returns_{};
 };
 
 class BeloteGame : public Game {
