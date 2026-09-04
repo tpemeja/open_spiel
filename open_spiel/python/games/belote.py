@@ -255,6 +255,17 @@ class BeloteState(pyspiel.State):
 
         self._bid_turn_order = _order_from((self._dealer + 1) % _NUM_PLAYERS)
         self._bid_pointer = 0
+        # Who has passed, per bidding round. `_bid_pointer` alone can't
+        # answer this: it resets to 0 between rounds and on a redeal, so
+        # without these the auction is unrecoverable from the state -- and
+        # a bid1 information state was byte-identical to the bid2 one that
+        # follows it (same 5 cards, same turned card, no trump yet), which
+        # is a perfect-recall violation: a player could not remember their
+        # own pass. Recorded in bid order, and kept through the play phase
+        # because who passed on which suit stays public, informative
+        # evidence about the hands still held.
+        self._bid1_passes = []
+        self._bid2_passes = []
 
         self._max_redeals = game.max_redeals
         self._redeal_count = 0
@@ -470,6 +481,7 @@ class BeloteState(pyspiel.State):
                 self._completion_schedule_after_take(player), "play"
             )
         else:
+            self._bid1_passes.append(player)
             self._bid_pointer += 1
             if self._bid_pointer == _NUM_PLAYERS:
                 self._phase = "bid2"
@@ -477,6 +489,7 @@ class BeloteState(pyspiel.State):
 
     def _apply_bid2_action(self, action, player) -> None:
         if action == PASS_ACTION:
+            self._bid2_passes.append(player)
             self._bid_pointer += 1
             if self._bid_pointer == _NUM_PLAYERS:
                 if self._redeal_count >= self._max_redeals:
@@ -493,6 +506,10 @@ class BeloteState(pyspiel.State):
                 self._deck = list(range(_NUM_CARDS))
                 self._bid_turn_order = _order_from((self._dealer + 1) % _NUM_PLAYERS)
                 self._bid_pointer = 0
+                # A redeal starts a brand-new auction on brand-new hands:
+                # the previous one's passes say nothing about these cards.
+                self._bid1_passes = []
+                self._bid2_passes = []
                 self._deal_schedule = _initial_deal_schedule(self._dealer)
                 self._deal_index = 0
                 self._after_deal_phase = "bid1"
@@ -823,6 +840,13 @@ class BeloteObserver:
             pieces.append(("turned_card", _NUM_CARDS, (_NUM_CARDS,)))
             pieces.append(("trump_suit", _NUM_SUITS + 1, (_NUM_SUITS + 1,)))
             pieces.append(("declarer", _NUM_PLAYERS, (_NUM_PLAYERS,)))
+            # Which bidding round is in progress (none / round 1 / round 2).
+            # A present-tense fact about the current state, so it belongs in
+            # the plain observation too, not only the perfect-recall one:
+            # without it a bid1 state and the bid2 state that follows are
+            # indistinguishable (identical hand, identical turned card,
+            # trump still unset) even though they offer different actions.
+            pieces.append(("bid_round", 3, (3,)))
             # One card-slot per player (indexed by absolute player id) rather
             # than a single unordered bag, so which player played which card
             # -- and hence the led suit and who currently holds the trick --
@@ -834,6 +858,14 @@ class BeloteObserver:
             pieces.append(("cards_played", _NUM_CARDS, (_NUM_CARDS,)))
             pieces.append(("team_points", 2, (2,)))
             if iig_obs_type.perfect_recall:
+                # Who passed, per round, indexed by absolute player id.
+                # History rather than present state, hence perfect-recall
+                # only -- and public history: everyone hears every pass.
+                # This is what lets a policy condition on "three players
+                # already declined this suit" instead of seeing only its
+                # own cards.
+                pieces.append(("bid1_passes", _NUM_PLAYERS, (_NUM_PLAYERS,)))
+                pieces.append(("bid2_passes", _NUM_PLAYERS, (_NUM_PLAYERS,)))
                 num_tricks = _NUM_CARDS // _NUM_PLAYERS
                 pieces.append((
                     "trick_history",
@@ -872,6 +904,15 @@ class BeloteObserver:
             self.dict["trump_suit"][index] = 1
         if "declarer" in self.dict and state._taker >= 0:
             self.dict["declarer"][state._taker] = 1
+        if "bid_round" in self.dict:
+            round_index = {"bid1": 1, "bid2": 2}.get(state._phase, 0)
+            self.dict["bid_round"][round_index] = 1
+        if "bid1_passes" in self.dict:
+            for p in state._bid1_passes:
+                self.dict["bid1_passes"][p] = 1
+        if "bid2_passes" in self.dict:
+            for p in state._bid2_passes:
+                self.dict["bid2_passes"][p] = 1
         if "current_trick" in self.dict or "trick_history" in self.dict:
             tricks = state._reconstruct_tricks()
             num_completed = len(state._trick_history)
@@ -915,6 +956,12 @@ class BeloteObserver:
             pieces.append(f"trump:{_SUIT_NAMES[state._trump_suit]}")
         if "declarer" in self.dict and state._taker >= 0:
             pieces.append(f"declarer:{state._taker}")
+        if "bid_round" in self.dict and state._phase in ("bid1", "bid2"):
+            pieces.append(f"bidround:{state._phase[-1]}")
+        if "bid1_passes" in self.dict and state._bid1_passes:
+            pieces.append(f"passed1:{state._bid1_passes}")
+        if "bid2_passes" in self.dict and state._bid2_passes:
+            pieces.append(f"passed2:{state._bid2_passes}")
         if "current_trick" in self.dict:
             pieces.append(f"trick:{[card_string(c) for _, c in state._trick]}")
         if "cards_played" in self.dict:

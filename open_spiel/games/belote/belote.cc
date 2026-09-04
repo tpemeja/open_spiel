@@ -195,18 +195,19 @@ BeloteGame::BeloteGame(const GameParameters& params)
 
 std::vector<int> BeloteGame::InformationStateTensorShape() const {
   // player(4) + hand(32) + dealer(4) + turned_card(32) + trump_suit(5) +
-  // declarer(4) + current_trick(4 * 32) + cards_played(32) +
-  // team_points(2) + trick_history(8 * 4 * 32) + trick_winners(8 * 4).
+  // declarer(4) + bid_round(3) + current_trick(4 * 32) + cards_played(32) +
+  // team_points(2) + bid1_passes(4) + bid2_passes(4) +
+  // trick_history(8 * 4 * 32) + trick_winners(8 * 4).
   int num_tricks = kNumCards / kNumPlayers;
-  return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 +
-          kNumPlayers * kNumCards + kNumCards + 2 +
+  return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 + 3 +
+          kNumPlayers * kNumCards + kNumCards + 2 + 4 + 4 +
           num_tricks * kNumPlayers * kNumCards + num_tricks * kNumPlayers};
 }
 
 std::vector<int> BeloteGame::ObservationTensorShape() const {
-  // Same as the information state tensor, without the trick history or
-  // trick winners.
-  return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 +
+  // Same as the information state tensor, without the per-round pass
+  // history, trick history, or trick winners.
+  return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 + 3 +
           kNumPlayers * kNumCards + kNumCards + 2};
 }
 
@@ -576,6 +577,7 @@ void BeloteState::ApplyBid1Action(int action, Player player) {
     hands_[player].push_back(turned_card_);
     StartCompletionDeal(CompletionScheduleAfterTake(player), Phase::kPlay);
   } else {
+    bid1_passes_.push_back(player);
     ++bid_pointer_;
     if (bid_pointer_ == kNumPlayers) {
       phase_ = Phase::kBid2;
@@ -586,6 +588,7 @@ void BeloteState::ApplyBid1Action(int action, Player player) {
 
 void BeloteState::ApplyBid2Action(int action, Player player) {
   if (action == kPassAction) {
+    bid2_passes_.push_back(player);
     ++bid_pointer_;
     if (bid_pointer_ == kNumPlayers) {
       if (redeal_count_ >= max_redeals_) {
@@ -604,6 +607,10 @@ void BeloteState::ApplyBid2Action(int action, Player player) {
       deck_size_ = kNumCards;
       bid_turn_order_ = OrderFrom((dealer_ + 1) % kNumPlayers);
       bid_pointer_ = 0;
+      // A redeal starts a brand-new auction on brand-new hands: the
+      // previous one's passes say nothing about these cards.
+      bid1_passes_.clear();
+      bid2_passes_.clear();
       deal_schedule_ = InitialDealSchedule(dealer_);
       deal_index_ = 0;
       after_deal_phase_ = Phase::kBid1;
@@ -782,6 +789,15 @@ void BeloteState::WriteObservation(Player player, bool perfect_recall,
   if (taker_ >= 0) it[taker_] = 1;
   it += kNumPlayers;
 
+  // Which bidding round is in progress (none / round 1 / round 2). A
+  // present-tense fact about the current state, so it belongs in the plain
+  // observation too, not only the perfect-recall one: without it a bid1
+  // state and the bid2 state that follows are indistinguishable (identical
+  // hand, identical turned card, trump still unset) even though they offer
+  // different actions.
+  it[phase_ == Phase::kBid1 ? 1 : (phase_ == Phase::kBid2 ? 2 : 0)] = 1;
+  it += 3;
+
   // One card-slot per player (indexed by absolute player id) rather than a
   // single unordered bag, so which player played which card -- and hence
   // the led suit and who currently holds the trick -- can be recovered from
@@ -799,6 +815,15 @@ void BeloteState::WriteObservation(Player player, bool perfect_recall,
   it[1] = team_points_[1] / static_cast<float>(kMaxScoreCapot);
   it += 2;
   if (perfect_recall) {
+    // Who passed, per round, indexed by absolute player id. History rather
+    // than present state, hence perfect-recall only -- and public history:
+    // everyone hears every pass. This is what lets a policy condition on
+    // "three players already declined this suit" instead of seeing only its
+    // own cards.
+    for (Player p : bid1_passes_) it[p] = 1;
+    it += kNumPlayers;
+    for (Player p : bid2_passes_) it[p] = 1;
+    it += kNumPlayers;
     // Only reconstructed for InformationStateTensor: ObservationTensor has
     // no use for the completed-trick history, so it never pays this cost.
     TrickList tricks = ReconstructCompletedTricks();
@@ -839,6 +864,15 @@ std::string BeloteState::InformationStateString(Player player) const {
     absl::StrAppend(&rv, " trump:", std::string(1, kSuitChar[trump_suit_]));
   }
   if (taker_ >= 0) absl::StrAppend(&rv, " declarer:", taker_);
+  if (phase_ == Phase::kBid1 || phase_ == Phase::kBid2) {
+    absl::StrAppend(&rv, " bidround:", phase_ == Phase::kBid1 ? "1" : "2");
+  }
+  if (!bid1_passes_.empty()) {
+    absl::StrAppend(&rv, " passed1:[", absl::StrJoin(bid1_passes_, ", "), "]");
+  }
+  if (!bid2_passes_.empty()) {
+    absl::StrAppend(&rv, " passed2:[", absl::StrJoin(bid2_passes_, ", "), "]");
+  }
   absl::StrAppend(&rv, " trick:[");
   for (int i = 0; i < trick_.size(); ++i) {
     if (i > 0) absl::StrAppend(&rv, ", ");

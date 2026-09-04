@@ -149,6 +149,92 @@ class BeloteTest(absltest.TestCase):
     self.assertTrue(state.is_terminal())
     self.assertEqual(state.returns(), [0.0] * 4)
 
+  def test_bid_rounds_are_distinguishable_information_states(self):
+    """A player's round-1 and round-2 decisions must be different
+    information states. Both show the same 5 cards, the same turned card
+    and no trump yet, so before the auction was added to the observer they
+    were byte-identical -- a perfect-recall violation (the player could not
+    remember having passed) that also made the two decisions, which offer
+    different action sets, impossible to tell apart from the tensor."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    _deal_hands(state)
+    player = state.current_player()
+
+    bid1_tensor = list(state.information_state_tensor(player))
+    bid1_string = state.information_state_string(player)
+    bid1_actions = state.legal_actions(player)
+
+    for _ in range(4):
+      state.apply_action(belote.PASS_ACTION)
+
+    self.assertEqual(state._phase, "bid2")
+    self.assertEqual(state.current_player(), player)
+    self.assertNotEqual(bid1_tensor, list(state.information_state_tensor(player)))
+    self.assertNotEqual(bid1_string, state.information_state_string(player))
+    self.assertNotEqual(bid1_actions, state.legal_actions(player))
+
+  def test_auction_passes_are_recorded_in_bid_order(self):
+    """Each pass is recorded against the player who made it, per round."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    _deal_hands(state)
+
+    first, second = state._bid_turn_order[0], state._bid_turn_order[1]
+    self.assertEqual(state._bid1_passes, [])
+    state.apply_action(belote.PASS_ACTION)
+    self.assertEqual(state._bid1_passes, [first])
+    state.apply_action(belote.PASS_ACTION)
+    self.assertEqual(state._bid1_passes, [first, second])
+
+    for _ in range(2):  # Complete round 1.
+      state.apply_action(belote.PASS_ACTION)
+    self.assertEqual(state._bid2_passes, [])
+    state.apply_action(belote.PASS_ACTION)
+    self.assertEqual(state._bid1_passes, list(state._bid_turn_order))
+    self.assertEqual(state._bid2_passes, [first])
+
+  def test_auction_record_is_visible_to_every_player(self):
+    """Passes are public: each player's own tensor reflects them, and the
+    record survives into the play phase (who declined which suit stays
+    informative evidence about the hands still held)."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    _deal_hands(state)
+    observer = game.make_py_observer(
+        pyspiel.IIGObservationType(perfect_recall=True))
+
+    passer = state.current_player()
+    state.apply_action(belote.PASS_ACTION)
+    for player in range(4):
+      observer.set_from(state, player)
+      np.testing.assert_array_equal(
+          observer.dict["bid1_passes"],
+          [1.0 if p == passer else 0.0 for p in range(4)])
+
+    taker = state.current_player()
+    state.apply_action(belote.TAKE_ACTION)
+    _finish_dealing(state)
+    self.assertEqual(state._phase, "play")
+    self.assertEqual(state._taker, taker)
+    observer.set_from(state, taker)
+    np.testing.assert_array_equal(
+        observer.dict["bid1_passes"],
+        [1.0 if p == passer else 0.0 for p in range(4)])
+    np.testing.assert_array_equal(observer.dict["bid_round"], [1.0, 0.0, 0.0])
+
+  def test_redeal_clears_the_auction_record(self):
+    """A redeal deals brand-new hands, so the previous auction's passes say
+    nothing about them and must not carry over."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    _deal_hands(state)
+    for _ in range(8):  # 4 passes in round 1, 4 in round 2 -> redeal.
+      state.apply_action(belote.PASS_ACTION)
+
+    self.assertEqual(state._bid1_passes, [])
+    self.assertEqual(state._bid2_passes, [])
+
   def test_must_follow_suit(self):
     """A player holding the led suit must play a card of that suit."""
     game = belote.BeloteGame()

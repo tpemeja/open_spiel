@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "open_spiel/abseil-cpp/absl/algorithm/container.h"
+#include "open_spiel/abseil-cpp/absl/strings/match.h"
+#include "open_spiel/abseil-cpp/absl/strings/str_cat.h"
 #include "open_spiel/spiel.h"
 #include "open_spiel/spiel_utils.h"
 #include "open_spiel/tests/basic_tests.h"
@@ -98,6 +100,87 @@ void MaxRedealsFlatDrawTest() {
   SPIEL_CHECK_TRUE(saw_flat_draw);
 }
 
+// Applies chance actions (the first legal one each time, for determinism)
+// until the initial 5-card-per-player + turned-card deal is complete and the
+// state has reached the round-1 bidding phase.
+void DealInitialHands(State* state) {
+  while (state->IsChanceNode()) {
+    state->ApplyAction(state->LegalActions()[0]);
+  }
+}
+
+// A player's round-1 and round-2 decisions must be different information
+// states. Both show the same 5 cards, the same turned card and no trump yet,
+// so before bid_round was added to the tensor they were identical -- a
+// perfect-recall violation (the player could not remember having passed)
+// that also made the two decisions, which offer different action sets,
+// impossible to tell apart from the tensor.
+void BidRoundsAreDistinguishableInformationStatesTest() {
+  std::shared_ptr<const Game> game = LoadGame("belote");
+  std::unique_ptr<State> state = game->NewInitialState();
+  DealInitialHands(state.get());
+  Player player = state->CurrentPlayer();
+
+  std::vector<float> bid1_tensor = state->InformationStateTensor(player);
+  std::string bid1_string = state->InformationStateString(player);
+  std::vector<Action> bid1_actions = state->LegalActions();
+
+  for (int i = 0; i < 4; ++i) state->ApplyAction(kPassAction);
+
+  SPIEL_CHECK_EQ(state->CurrentPlayer(), player);
+  SPIEL_CHECK_TRUE(bid1_tensor != state->InformationStateTensor(player));
+  SPIEL_CHECK_TRUE(bid1_string != state->InformationStateString(player));
+  SPIEL_CHECK_TRUE(bid1_actions != state->LegalActions());
+}
+
+// Each pass is recorded against the player who made it, per round, and is
+// public: every player's information state reflects it.
+void AuctionPassesAreRecordedInBidOrderTest() {
+  std::shared_ptr<const Game> game = LoadGame("belote");
+  std::unique_ptr<State> state = game->NewInitialState();
+  DealInitialHands(state.get());
+
+  Player first = state->CurrentPlayer();
+  state->ApplyAction(kPassAction);
+  for (Player p = 0; p < kNumPlayers; ++p) {
+    SPIEL_CHECK_TRUE(absl::StrContains(
+        state->InformationStateString(p),
+        absl::StrCat("passed1:[", first, "]")));
+  }
+
+  Player second = state->CurrentPlayer();
+  state->ApplyAction(kPassAction);
+  SPIEL_CHECK_TRUE(absl::StrContains(
+      state->InformationStateString(first),
+      absl::StrCat("passed1:[", first, ", ", second, "]")));
+
+  for (int i = 0; i < 2; ++i) state->ApplyAction(kPassAction);  // Round 1.
+  SPIEL_CHECK_FALSE(
+      absl::StrContains(state->InformationStateString(first), "passed2:"));
+  Player third = state->CurrentPlayer();
+  state->ApplyAction(kPassAction);  // Round 2.
+  SPIEL_CHECK_TRUE(absl::StrContains(
+      state->InformationStateString(first),
+      absl::StrCat("passed2:[", third, "]")));
+}
+
+// A redeal deals brand-new hands, so the previous auction's passes say
+// nothing about them and must not carry over.
+void RedealClearsTheAuctionRecordTest() {
+  std::shared_ptr<const Game> game = LoadGame("belote");
+  std::unique_ptr<State> state = game->NewInitialState();
+  DealInitialHands(state.get());
+
+  for (int i = 0; i < 8; ++i) {  // 4 passes in round 1, 4 in round 2.
+    state->ApplyAction(kPassAction);
+  }
+
+  SPIEL_CHECK_TRUE(state->IsChanceNode());  // Redealt, not a flat draw.
+  std::string info = state->InformationStateString(0);
+  SPIEL_CHECK_FALSE(absl::StrContains(info, "passed1:"));
+  SPIEL_CHECK_FALSE(absl::StrContains(info, "passed2:"));
+}
+
 // Resampling must never change what `p` can already see: their own hand and
 // all public information (dealer, trump, tricks, points, ...), captured
 // here via information-state equality, must be identical before and after.
@@ -141,5 +224,8 @@ int main(int argc, char** argv) {
   open_spiel::belote::BasicGameTests();
   open_spiel::belote::ManyRandomGamesInvariantsTest();
   open_spiel::belote::MaxRedealsFlatDrawTest();
+  open_spiel::belote::BidRoundsAreDistinguishableInformationStatesTest();
+  open_spiel::belote::AuctionPassesAreRecordedInBidOrderTest();
+  open_spiel::belote::RedealClearsTheAuctionRecordTest();
   open_spiel::belote::ResampleFromInfostateTest();
 }

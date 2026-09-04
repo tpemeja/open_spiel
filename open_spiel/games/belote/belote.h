@@ -204,6 +204,16 @@ class BeloteState : public State {
 
   std::array<Player, kNumPlayers> bid_turn_order_{};
   int bid_pointer_ = 0;
+  // Who has passed, per bidding round. `bid_pointer_` alone can't answer
+  // this: it resets to 0 between rounds and on a redeal, so without these
+  // the auction is unrecoverable from the state -- and a bid1 information
+  // state was byte-identical to the bid2 one that follows it (same 5 cards,
+  // same turned card, no trump yet), which is a perfect-recall violation: a
+  // player could not remember their own pass. Recorded in bid order, and
+  // kept through the play phase because who passed on which suit stays
+  // public, informative evidence about the hands still held.
+  absl::InlinedVector<Player, kNumPlayers> bid1_passes_;
+  absl::InlinedVector<Player, kNumPlayers> bid2_passes_;
 
   const int max_redeals_;
   int redeal_count_ = 0;

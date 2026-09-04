@@ -24,12 +24,12 @@ NumPlayers() = 4
 MinUtility() = -272.0
 MaxUtility() = 272.0
 UtilitySum() = 0.0
-InformationStateTensorShape() = player: [4], hand: [32], dealer: [4], turned_card: [32], trump_suit: [5], declarer: [4], current_trick: [4, 32], cards_played: [32], team_points: [2], trick_history: [8, 4, 32], trick_winners: [8, 4]
+InformationStateTensorShape() = player: [4], hand: [32], dealer: [4], turned_card: [32], trump_suit: [5], declarer: [4], bid_round: [3], current_trick: [4, 32], cards_played: [32], team_points: [2], bid1_passes: [4], bid2_passes: [4], trick_history: [8, 4, 32], trick_winners: [8, 4]
 InformationStateTensorLayout() = TensorLayout.CHW
-InformationStateTensorSize() = 1299
-ObservationTensorShape() = player: [4], hand: [32], dealer: [4], turned_card: [32], trump_suit: [5], declarer: [4], current_trick: [4, 32], cards_played: [32], team_points: [2]
+InformationStateTensorSize() = 1310
+ObservationTensorShape() = player: [4], hand: [32], dealer: [4], turned_card: [32], trump_suit: [5], declarer: [4], bid_round: [3], current_trick: [4, 32], cards_played: [32], team_points: [2]
 ObservationTensorLayout() = TensorLayout.CHW
-ObservationTensorSize() = 243
+ObservationTensorSize() = 246
 MaxGameLength() = 472
 ToString() = "python_belote(dealer=0,max_redeals=10)"
 
@@ -53,12 +53,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◯◉
 InformationStateTensor(0).declarer: ◯◯◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -88,12 +91,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◯◉
 InformationStateTensor(1).declarer: ◯◯◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -123,12 +129,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◯◉
 InformationStateTensor(2).declarer: ◯◯◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -158,12 +167,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◯◉
 InformationStateTensor(3).declarer: ◯◯◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -202,6 +214,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◯◉
 ObservationTensor(0).declarer: ◯◯◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -214,6 +227,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◯◉
 ObservationTensor(1).declarer: ◯◯◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -226,6 +240,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◯◉
 ObservationTensor(2).declarer: ◯◯◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -238,6 +253,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◯◉
 ObservationTensor(3).declarer: ◯◯◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -271,12 +287,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◯◉
 InformationStateTensor(0).declarer: ◯◯◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -306,12 +325,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◯◉
 InformationStateTensor(1).declarer: ◯◯◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -341,12 +363,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◯◉
 InformationStateTensor(2).declarer: ◯◯◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -376,12 +401,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◯◉
 InformationStateTensor(3).declarer: ◯◯◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -420,6 +448,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◯◉
 ObservationTensor(0).declarer: ◯◯◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -432,6 +461,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◯◉
 ObservationTensor(1).declarer: ◯◯◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -444,6 +474,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◯◉
 ObservationTensor(2).declarer: ◯◯◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -456,6 +487,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◯◉
 ObservationTensor(3).declarer: ◯◯◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -556,22 +588,25 @@ HistoryString() = "12, 18, 10, 31, 4, 8, 20, 14, 30, 6, 3, 11, 0, 1, 5, 17, 25, 
 IsChanceNode() = False
 IsSimultaneousNode() = False
 CurrentPlayer() = 1
-InformationStateString(0) = "p0 hand:['10C', 'KC', '10D', '10S', 'JS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-InformationStateString(1) = "p1 hand:['7C', '8C', '9D', 'JD', '9H'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-InformationStateString(2) = "p2 hand:['JC', 'QC', '7D', '8H', 'AS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-InformationStateString(3) = "p3 hand:['KD', '10H', 'JH', '8S', 'KS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
+InformationStateString(0) = "p0 hand:['10C', 'KC', '10D', '10S', 'JS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+InformationStateString(1) = "p1 hand:['7C', '8C', '9D', 'JD', '9H'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+InformationStateString(2) = "p2 hand:['JC', 'QC', '7D', '8H', 'AS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+InformationStateString(3) = "p3 hand:['KD', '10H', 'JH', '8S', 'KS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
 InformationStateTensor(0).player: ◉◯◯◯
 InformationStateTensor(0).hand: ◯◯◯◉◯◯◉◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◉◯◯◯
 InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◯◉
 InformationStateTensor(0).declarer: ◯◯◯◯
+InformationStateTensor(0).bid_round: ◯◉◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -601,12 +636,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◯◉
 InformationStateTensor(1).declarer: ◯◯◯◯
+InformationStateTensor(1).bid_round: ◯◉◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -636,12 +674,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◯◉
 InformationStateTensor(2).declarer: ◯◯◯◯
+InformationStateTensor(2).bid_round: ◯◉◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -671,12 +712,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◯◉
 InformationStateTensor(3).declarer: ◯◯◯◯
+InformationStateTensor(3).bid_round: ◯◉◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -700,11 +744,11 @@ InformationStateTensor(3).trick_winners: ◯◯◯◯
                                          ◯◯◯◯
                                          ◯◯◯◯
                                          ◯◯◯◯
-ObservationString(0) = "p0 hand:['10C', 'KC', '10D', '10S', 'JS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-ObservationString(1) = "p1 hand:['7C', '8C', '9D', 'JD', '9H'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-ObservationString(2) = "p2 hand:['JC', 'QC', '7D', '8H', 'AS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-ObservationString(3) = "p3 hand:['KD', '10H', 'JH', '8S', 'KS'] dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
-PublicObservationString() = "p0 dealer:0 turned:7S trick:[] played:[] points:[0, 0]"
+ObservationString(0) = "p0 hand:['10C', 'KC', '10D', '10S', 'JS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+ObservationString(1) = "p1 hand:['7C', '8C', '9D', 'JD', '9H'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+ObservationString(2) = "p2 hand:['JC', 'QC', '7D', '8H', 'AS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+ObservationString(3) = "p3 hand:['KD', '10H', 'JH', '8S', 'KS'] dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
+PublicObservationString() = "p0 dealer:0 turned:7S bidround:1 trick:[] played:[] points:[0, 0]"
 PrivateObservationString(0) = "p0 hand:['10C', 'KC', '10D', '10S', 'JS']"
 PrivateObservationString(1) = "p1 hand:['7C', '8C', '9D', 'JD', '9H']"
 PrivateObservationString(2) = "p2 hand:['JC', 'QC', '7D', '8H', 'AS']"
@@ -715,6 +759,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◯◉
 ObservationTensor(0).declarer: ◯◯◯◯
+ObservationTensor(0).bid_round: ◯◉◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -727,6 +772,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◯◉
 ObservationTensor(1).declarer: ◯◯◯◯
+ObservationTensor(1).bid_round: ◯◉◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -739,6 +785,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◯◉
 ObservationTensor(2).declarer: ◯◯◯◯
+ObservationTensor(2).bid_round: ◯◉◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -751,6 +798,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◯◉
 ObservationTensor(3).declarer: ◯◯◯◯
+ObservationTensor(3).bid_round: ◯◉◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -834,12 +882,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -869,12 +920,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -904,12 +958,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -939,12 +996,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -983,6 +1043,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -995,6 +1056,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1007,6 +1069,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1019,6 +1082,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1058,12 +1122,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1093,12 +1160,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1128,12 +1198,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1163,12 +1236,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1207,6 +1283,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1219,6 +1296,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1231,6 +1309,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1243,6 +1322,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1282,12 +1362,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1317,12 +1400,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1352,12 +1438,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1387,12 +1476,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1431,6 +1523,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1443,6 +1536,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1455,6 +1549,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1467,6 +1562,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1506,12 +1602,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points: ◯◯
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1541,12 +1640,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points: ◯◯
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1576,12 +1678,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points: ◯◯
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1611,12 +1716,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points: ◯◯
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1655,6 +1763,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1667,6 +1776,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1679,6 +1789,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1691,6 +1802,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1730,12 +1842,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).team_points = [0.06746, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1765,12 +1880,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).team_points = [0.06746, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1800,12 +1918,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).team_points = [0.06746, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1835,12 +1956,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).team_points = [0.06746, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1879,6 +2003,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1891,6 +2016,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1903,6 +2029,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1915,6 +2042,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1954,12 +2082,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
 InformationStateTensor(0).team_points = [0.06746, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -1989,12 +2120,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
 InformationStateTensor(1).team_points = [0.06746, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2024,12 +2158,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
 InformationStateTensor(2).team_points = [0.06746, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2059,12 +2196,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
 InformationStateTensor(3).team_points = [0.06746, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2103,6 +2243,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2115,6 +2256,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2127,6 +2269,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2139,6 +2282,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2178,12 +2322,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◉
 InformationStateTensor(0).team_points = [0.06746, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2213,12 +2360,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◉
 InformationStateTensor(1).team_points = [0.06746, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2248,12 +2398,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◉
 InformationStateTensor(2).team_points = [0.06746, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2283,12 +2436,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◉
 InformationStateTensor(3).team_points = [0.06746, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2327,6 +2483,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2339,6 +2496,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2351,6 +2509,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2363,6 +2522,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2402,12 +2562,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◉
 InformationStateTensor(0).team_points = [0.06746, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2437,12 +2600,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◉
 InformationStateTensor(1).team_points = [0.06746, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2472,12 +2638,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◉
 InformationStateTensor(2).team_points = [0.06746, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2507,12 +2676,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◯◉◯◯◉◯◯◉
 InformationStateTensor(3).team_points = [0.06746, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2551,6 +2723,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2563,6 +2736,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2575,6 +2749,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2587,6 +2762,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉
@@ -2626,12 +2802,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(0).team_points = [0.19048, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2661,12 +2840,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(1).team_points = [0.19048, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2696,12 +2878,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(2).team_points = [0.19048, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2731,12 +2916,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◯◯◯◯◯◯◯◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(3).team_points = [0.19048, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2775,6 +2963,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2787,6 +2976,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2799,6 +2989,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2811,6 +3002,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2854,12 +3046,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◉◯◯◯◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(0).team_points = [0.19048, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2889,12 +3084,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◉◯◯◯◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(1).team_points = [0.19048, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2924,12 +3122,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◉◯◯◯◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(2).team_points = [0.19048, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -2959,12 +3160,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◉◯◯◯◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(3).team_points = [0.19048, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3003,6 +3207,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3015,6 +3220,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3027,6 +3233,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3039,6 +3246,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3078,12 +3286,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◯◉◯◯◉◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(0).team_points = [0.19048, 0.0]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3113,12 +3324,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◯◉◯◯◉◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(1).team_points = [0.19048, 0.0]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3148,12 +3362,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◯◉◯◯◉◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(2).team_points = [0.19048, 0.0]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3183,12 +3400,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◯◉◯◯◉◯◯◉◯◉◯◯◉◯◉◉◯◯◯◯◯◯◯◯◉◉◯◯◉◯◯◉
 InformationStateTensor(3).team_points = [0.19048, 0.0]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3227,6 +3447,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3239,6 +3460,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3251,6 +3473,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3263,6 +3486,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3382,12 +3606,15 @@ InformationStateTensor(0).dealer: ◉◯◯◯
 InformationStateTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(0).trump_suit: ◯◯◯◉◯
 InformationStateTensor(0).declarer: ◯◉◯◯
+InformationStateTensor(0).bid_round: ◉◯◯
 InformationStateTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(0).cards_played: ◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉
 InformationStateTensor(0).team_points = [0.35317, 0.28968]
+InformationStateTensor(0).bid1_passes: ◯◯◯◯
+InformationStateTensor(0).bid2_passes: ◯◯◯◯
 InformationStateTensor(0).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3417,12 +3644,15 @@ InformationStateTensor(1).dealer: ◉◯◯◯
 InformationStateTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(1).trump_suit: ◯◯◯◉◯
 InformationStateTensor(1).declarer: ◯◉◯◯
+InformationStateTensor(1).bid_round: ◉◯◯
 InformationStateTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(1).cards_played: ◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉
 InformationStateTensor(1).team_points = [0.35317, 0.28968]
+InformationStateTensor(1).bid1_passes: ◯◯◯◯
+InformationStateTensor(1).bid2_passes: ◯◯◯◯
 InformationStateTensor(1).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3452,12 +3682,15 @@ InformationStateTensor(2).dealer: ◉◯◯◯
 InformationStateTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(2).trump_suit: ◯◯◯◉◯
 InformationStateTensor(2).declarer: ◯◉◯◯
+InformationStateTensor(2).bid_round: ◉◯◯
 InformationStateTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(2).cards_played: ◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉
 InformationStateTensor(2).team_points = [0.35317, 0.28968]
+InformationStateTensor(2).bid1_passes: ◯◯◯◯
+InformationStateTensor(2).bid2_passes: ◯◯◯◯
 InformationStateTensor(2).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3487,12 +3720,15 @@ InformationStateTensor(3).dealer: ◉◯◯◯
 InformationStateTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 InformationStateTensor(3).trump_suit: ◯◯◯◉◯
 InformationStateTensor(3).declarer: ◯◉◯◯
+InformationStateTensor(3).bid_round: ◉◯◯
 InformationStateTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                          ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 InformationStateTensor(3).cards_played: ◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉◉
 InformationStateTensor(3).team_points = [0.35317, 0.28968]
+InformationStateTensor(3).bid1_passes: ◯◯◯◯
+InformationStateTensor(3).bid2_passes: ◯◯◯◯
 InformationStateTensor(3).trick_history:
 ◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯  ◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
 ◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯  ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯  ◯◉◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3531,6 +3767,7 @@ ObservationTensor(0).dealer: ◉◯◯◯
 ObservationTensor(0).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(0).trump_suit: ◯◯◯◉◯
 ObservationTensor(0).declarer: ◯◉◯◯
+ObservationTensor(0).bid_round: ◉◯◯
 ObservationTensor(0).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3543,6 +3780,7 @@ ObservationTensor(1).dealer: ◉◯◯◯
 ObservationTensor(1).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(1).trump_suit: ◯◯◯◉◯
 ObservationTensor(1).declarer: ◯◉◯◯
+ObservationTensor(1).bid_round: ◉◯◯
 ObservationTensor(1).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3555,6 +3793,7 @@ ObservationTensor(2).dealer: ◉◯◯◯
 ObservationTensor(2).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(2).trump_suit: ◯◯◯◉◯
 ObservationTensor(2).declarer: ◯◉◯◯
+ObservationTensor(2).bid_round: ◉◯◯
 ObservationTensor(2).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
@@ -3567,6 +3806,7 @@ ObservationTensor(3).dealer: ◉◯◯◯
 ObservationTensor(3).turned_card: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◉◯◯◯◯◯◯◯
 ObservationTensor(3).trump_suit: ◯◯◯◉◯
 ObservationTensor(3).declarer: ◯◉◯◯
+ObservationTensor(3).bid_round: ◉◯◯
 ObservationTensor(3).current_trick: ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
                                     ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯
