@@ -285,6 +285,152 @@ class BeloteState(pyspiel.State):
         self._team_points = [0, 0]
         self._returns = [0.0] * _NUM_PLAYERS
 
+    # ---- public read-only view of the state -------------------------------
+    #
+    # `hands` has always been public because agents need it. Everything below
+    # is needed just as often -- a bot cannot decide anything without knowing
+    # the trump suit or whose contract it is -- so it is exposed the same way
+    # rather than left for callers to reach into private attributes.
+    #
+    # These return the live objects, not copies, matching `hands`: they sit
+    # in the inner loop of Monte-Carlo agents that touch them thousands of
+    # times per decision. Treat them as read-only.
+
+    @property
+    def phase(self) -> str:
+        """"deal", "bid1", "bid2", "play" or "done"."""
+        return self._phase
+
+    @property
+    def dealer(self) -> int:
+        """The seat that dealt. Rotates on a redeal."""
+        return self._dealer
+
+    @property
+    def turned_card(self) -> int | None:
+        """The card turned face up for round 1, or None before the deal.
+
+        Stays set after the auction resolves: it is public information every
+        player saw, and it ends up in the taker's hand.
+        """
+        return self._turned_card
+
+    @property
+    def taker(self) -> int:
+        """The seat holding the contract, or -1 if the auction is unresolved."""
+        return self._taker
+
+    @property
+    def declarer_team(self) -> int:
+        """The declaring team, or -1."""
+        return self._declarer_team
+
+    @property
+    def trump_suit(self) -> int:
+        """Trump suit index, or -1 before the auction resolves."""
+        return self._trump_suit
+
+    @property
+    def bidding_round(self) -> int | None:
+        """Which auction round is live, or resolved the contract: 1 or 2.
+
+        `phase` alone is not enough. It reads "bid2" the instant round 2
+        opens, before anyone in it has acted, and says nothing once the
+        auction is over -- but round 1 having four passes is durable.
+        """
+        if self._taker >= 0:
+            return 2 if len(self._bid1_passes) == _NUM_PLAYERS else 1
+        if self._phase == "bid1":
+            return 1
+        if self._phase == "bid2":
+            return 2
+        return None
+
+    def bid_passes(self, round_number: int) -> list[int]:
+        """Seats that passed in `round_number`, in turn order.
+
+        Only passes are recorded: a take or a suit call ends the auction, so
+        that seat is never "passed" -- it is `taker`. Both lists persist for
+        the rest of the deal rather than being cleared when bidding resolves.
+        """
+        if round_number == 1:
+            return self._bid1_passes
+        if round_number == 2:
+            return self._bid2_passes
+        raise ValueError(f"bidding has rounds 1 and 2, not {round_number!r}")
+
+    @property
+    def current_trick(self) -> list[tuple[int, int]]:
+        """(player, card) pairs played so far in the trick in progress."""
+        return self._trick
+
+    @property
+    def trick_winners(self) -> list[int]:
+        """The winning seat of each completed trick, in order."""
+        return self._trick_winners
+
+    @property
+    def played_cards(self) -> list[int]:
+        """Every card played so far this deal."""
+        return self._played_cards
+
+    @property
+    def team_points(self) -> list[int]:
+        """Trick points per team.
+
+        Includes the last-trick bonus, folded in the instant the eighth trick
+        completes -- it is not a separate line item anywhere. Excludes the
+        belote bonus, which is applied at scoring.
+        """
+        return self._team_points
+
+    @property
+    def belote_holder(self) -> int:
+        """The seat holding trump king AND queen, or -1.
+
+        Set in `_enter_play_phase` from the real hands, before a card is
+        played: this is bookkeeping computed when the fact becomes true, not
+        when an opponent could learn it. Under the rules the pair is
+        announced by playing the first of the two cards, so anything shown to
+        a player who is not the holder must gate on `belote_announced`.
+        """
+        return self._belote_player
+
+    @property
+    def belote_announced(self) -> int:
+        """How many of the two marriage cards have actually been played (0-2).
+
+        The rules-facing counterpart to `belote_holder`: 0 means the holding
+        is not yet public knowledge.
+        """
+        if self._belote_player < 0 or self._trump_suit < 0:
+            return 0
+        played = set(self._played_cards)
+        return sum(card in played for card in self._trump_king_and_queen())
+
+    def tricks(self) -> list[list[tuple[int, int]]]:
+        """Every completed trick as (player, card) pairs in play order."""
+        return self._reconstruct_tricks()
+
+    def trump_marriage(self) -> tuple[int, int]:
+        """The king and queen of the trump suit."""
+        return self._trump_king_and_queen()
+
+    def beats(self, card, other, led_suit, trump_suit) -> bool:
+        """Does `card` beat `other`, given the led suit and trump?"""
+        return self._is_better(card, other, led_suit, trump_suit)
+
+    def public_inference(self, tricks=None):
+        """What the public history proves about the other hands: the suits
+        each seat is known void in, and an upper bound on the trump strength
+        each is known to hold.
+
+        This is what `resample_from_infostate` uses to keep a sampled world
+        consistent; exposed so a caller sampling or featurising can respect
+        the same constraints instead of re-deriving them.
+        """
+        return self._infer_void_and_trump_bounds(tricks)
+
     def current_player(self) -> int:
         """Returns id of the current player to act."""
         if self.is_terminal():

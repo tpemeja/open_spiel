@@ -681,6 +681,148 @@ class BeloteTest(absltest.TestCase):
         clone = state.resample_from_infostate(player_id, sampler)
         self.assertEqual(clone._belote_player, 1)
 
+  def test_public_state_view_matches_internals(self):
+    """The public accessors are the supported way to read a state. They must
+    agree with the internals they front, or callers get a second, subtly
+    different view of the same game."""
+    game = pyspiel.load_game("python_belote")
+    state = game.new_initial_state()
+    rng = np.random.default_rng(11)
+    while not state.is_terminal():
+      self.assertEqual(state.phase, state._phase)
+      self.assertEqual(state.dealer, state._dealer)
+      self.assertEqual(state.turned_card, state._turned_card)
+      self.assertEqual(state.taker, state._taker)
+      self.assertEqual(state.declarer_team, state._declarer_team)
+      self.assertEqual(state.trump_suit, state._trump_suit)
+      self.assertEqual(state.current_trick, state._trick)
+      self.assertEqual(state.trick_winners, state._trick_winners)
+      self.assertEqual(state.played_cards, state._played_cards)
+      self.assertEqual(state.team_points, state._team_points)
+      self.assertEqual(state.belote_holder, state._belote_player)
+      self.assertEqual(state.bid_passes(1), state._bid1_passes)
+      self.assertEqual(state.bid_passes(2), state._bid2_passes)
+      self.assertEqual(state.tricks(), state._reconstruct_tricks())
+      if state.is_chance_node():
+        outcomes, probs = zip(*state.chance_outcomes())
+        state.apply_action(int(rng.choice(outcomes, p=probs)))
+      else:
+        state.apply_action(int(rng.choice(state.legal_actions())))
+
+  def test_bid_passes_rejects_a_round_that_does_not_exist(self):
+    state = pyspiel.load_game("python_belote").new_initial_state()
+    with self.assertRaises(ValueError):
+      state.bid_passes(3)
+
+  def test_bidding_round_survives_the_auction_resolving(self):
+    """`phase` stops describing the auction once it resolves, and reads
+    "bid2" the moment round 2 opens even before anyone has acted.
+    `bidding_round` has to stay correct through both."""
+    game = pyspiel.load_game("python_belote")
+    state = game.new_initial_state()
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    self.assertEqual(state.phase, "bid1")
+    self.assertEqual(state.bidding_round, 1)
+
+    state.apply_action(belote.TAKE_ACTION)
+    # The auction is over and phase has moved on, but it was won in round 1.
+    self.assertNotIn(state.phase, ("bid1", "bid2"))
+    self.assertEqual(state.bidding_round, 1)
+    self.assertEqual(len(state.bid_passes(1)), 0)
+
+  def test_bidding_round_reports_two_after_four_passes(self):
+    game = pyspiel.load_game("python_belote")
+    state = game.new_initial_state()
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    for _ in range(belote._NUM_PLAYERS):
+      state.apply_action(belote.PASS_ACTION)
+    self.assertEqual(state.bidding_round, 2)
+    self.assertEqual(len(state.bid_passes(1)), belote._NUM_PLAYERS)
+
+  def test_belote_announced_lags_belote_holder(self):
+    """`belote_holder` is known to the engine from the deal; the holding only
+    becomes public when a marriage card is played. A UI or an opponent model
+    reading the former would be seeing information no player has."""
+    game = pyspiel.load_game("python_belote")
+    state = game.new_initial_state()
+    rng = np.random.default_rng(3)
+    while state.is_chance_node():
+      outcomes, probs = zip(*state.chance_outcomes())
+      state.apply_action(int(rng.choice(outcomes, p=probs)))
+    state.apply_action(belote.TAKE_ACTION)
+    while state.is_chance_node():
+      outcomes, probs = zip(*state.chance_outcomes())
+      state.apply_action(int(rng.choice(outcomes, p=probs)))
+
+    if state.belote_holder < 0:
+      self.skipTest("this deal has no belote holding")
+    # Holder known, nothing announced yet.
+    self.assertEqual(state.belote_announced, 0)
+
+    king, queen = state.trump_marriage()
+    seen = 0
+    while not state.is_terminal():
+      if state.is_chance_node():
+        outcomes, probs = zip(*state.chance_outcomes())
+        state.apply_action(int(rng.choice(outcomes, p=probs)))
+        continue
+      action = int(rng.choice(state.legal_actions()))
+      state.apply_action(action)
+      if action in (king, queen):
+        seen += 1
+      self.assertEqual(state.belote_announced, seen)
+    self.assertEqual(seen, 2)
+
+  def test_beats_agrees_with_trick_winners(self):
+    """`beats` is the rules comparison strategies use to reason about a
+    trick; it must agree with how the engine actually awards them."""
+    game = pyspiel.load_game("python_belote")
+    rng = np.random.default_rng(7)
+    for _ in range(20):
+      state = game.new_initial_state()
+      while not state.is_terminal():
+        if state.is_chance_node():
+          outcomes, probs = zip(*state.chance_outcomes())
+          state.apply_action(int(rng.choice(outcomes, p=probs)))
+        else:
+          state.apply_action(int(rng.choice(state.legal_actions())))
+      trump = state.trump_suit
+      if trump < 0:
+        continue
+      for trick, winner in zip(state.tricks(), state.trick_winners):
+        led_suit = belote.card_suit(trick[0][1])
+        best_player, best_card = trick[0]
+        for player, card in trick[1:]:
+          if state.beats(card, best_card, led_suit, trump):
+            best_player, best_card = player, card
+        self.assertEqual(best_player, winner)
+
+  def test_public_inference_matches_resampling_constraints(self):
+    """`public_inference` is what resampling uses to keep a world legal.
+    Anything featurising or sampling should be able to rely on the same
+    answer the engine relies on."""
+    game = pyspiel.load_game("python_belote")
+    rng = np.random.default_rng(13)
+    state = game.new_initial_state()
+    while not state.is_terminal():
+      if state.is_chance_node():
+        outcomes, probs = zip(*state.chance_outcomes())
+        state.apply_action(int(rng.choice(outcomes, p=probs)))
+        continue
+      if state.phase == "play" and len(state.trick_winners) >= 2:
+        voids, _ = state.public_inference()
+        player = state.current_player()
+        world = state.resample_from_infostate(player, rng.random)
+        for seat, suits in voids.items():
+          if seat == player:
+            continue
+          for card in world.hands[seat]:
+            self.assertNotIn(belote.card_suit(card), suits)
+      state.apply_action(int(rng.choice(state.legal_actions())))
+
+
 
 if __name__ == "__main__":
   absltest.main()
