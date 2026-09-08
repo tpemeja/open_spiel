@@ -343,8 +343,7 @@ std::vector<Action> BeloteState::LegalCardPlays(Player player) const {
   return actions;
 }
 
-bool BeloteState::IsBetter(int card, int other, int led_suit) const {
-  int trump = trump_suit_;
+bool Beats(int card, int other, int led_suit, int trump) {
   bool card_trump = CardSuit(card) == trump;
   bool other_trump = CardSuit(other) == trump;
 
@@ -370,6 +369,107 @@ bool BeloteState::IsBetter(int card, int other, int led_suit) const {
 
   // Neither card is trump nor led suit: card cannot beat other.
   return false;
+}
+
+// ---- public read-only view of the state -----------------------------------
+
+namespace {
+// Shared by ToString() and by PhaseString(), which the bindings expose as
+// current_phase().
+std::string PhaseToString(Phase phase) {
+  switch (phase) {
+    case Phase::kDeal: return "deal";
+    case Phase::kBid1: return "bid1";
+    case Phase::kBid2: return "bid2";
+    case Phase::kPlay: return "play";
+    case Phase::kGameOver: return "done";
+  }
+  return "";
+}
+}  // namespace
+
+std::string BeloteState::PhaseString() const { return PhaseToString(phase_); }
+
+absl::optional<int> BeloteState::Upcard() const {
+  if (turned_card_ == kInvalidAction) return absl::nullopt;
+  return turned_card_;
+}
+
+absl::optional<int> BeloteState::BiddingRound() const {
+  if (taker_ >= 0) {
+    return bid1_passes_.size() == kNumPlayers ? 2 : 1;
+  }
+  if (phase_ == Phase::kBid1) return 1;
+  if (phase_ == Phase::kBid2) return 2;
+  return absl::nullopt;
+}
+
+std::vector<Player> BeloteState::BidPasses(int round_number) const {
+  if (round_number == 1) {
+    return std::vector<Player>(bid1_passes_.begin(), bid1_passes_.end());
+  }
+  if (round_number == 2) {
+    return std::vector<Player>(bid2_passes_.begin(), bid2_passes_.end());
+  }
+  SpielFatalError(
+      absl::StrCat("bidding has rounds 1 and 2, not ", round_number));
+}
+
+std::vector<std::pair<Player, int>> BeloteState::CurrentTrick() const {
+  return std::vector<std::pair<Player, int>>(trick_.begin(), trick_.end());
+}
+
+std::vector<Player> BeloteState::TrickWinners() const {
+  return std::vector<Player>(trick_winners_.begin(),
+                             trick_winners_.begin() + tricks_played_);
+}
+
+std::vector<int> BeloteState::PlayedCards() const {
+  return std::vector<int>(played_cards_.begin(), played_cards_.end());
+}
+
+std::vector<int> BeloteState::TeamPoints() const {
+  return std::vector<int>(team_points_.begin(), team_points_.end());
+}
+
+std::vector<std::vector<int>> BeloteState::PlayerHands() const {
+  std::vector<std::vector<int>> hands;
+  hands.reserve(kNumPlayers);
+  for (Player player = 0; player < kNumPlayers; ++player) {
+    hands.emplace_back(hands_[player].begin(), hands_[player].end());
+  }
+  return hands;
+}
+
+int BeloteState::BeloteAnnounced() const {
+  if (belote_holder_ == kInvalidPlayer || trump_suit_ < 0) return 0;
+  const auto [trump_king, trump_queen] = TrumpKingAndQueen();
+  int announced = 0;
+  for (int card : played_cards_) {
+    if (card == trump_king || card == trump_queen) ++announced;
+  }
+  return announced;
+}
+
+std::vector<std::vector<std::pair<Player, int>>> BeloteState::Tricks() const {
+  std::vector<std::vector<std::pair<Player, int>>> result;
+  for (const Trick& trick : ReconstructTricks()) {
+    result.emplace_back(trick.begin(), trick.end());
+  }
+  return result;
+}
+
+absl::optional<std::pair<int, int>> BeloteState::TrumpMarriage() const {
+  if (trump_suit_ < 0) return absl::nullopt;
+  return TrumpKingAndQueen();
+}
+
+VoidAndTrumpBounds BeloteState::PublicInference() const {
+  return InferVoidAndTrumpBounds(ReconstructTricks());
+}
+
+bool BeloteState::IsBetter(int card, int other, int led_suit) const {
+  return Beats(card, other, led_suit, trump_suit_);
 }
 
 Player BeloteState::TrickWinner(const Trick& trick) const {
@@ -405,10 +505,14 @@ void BeloteState::EnterPlayPhase() {
   belote_holder_ = FindBeloteHolder();
 }
 
+std::pair<int, int> BeloteState::TrumpKingAndQueen() const {
+  return {trump_suit_ * kNumRanks + 6,   // Rank index of "K".
+          trump_suit_ * kNumRanks + 5};  // Rank index of "Q".
+}
+
 Player BeloteState::FindBeloteHolder(const Hands& hands,
                                      const TrickList& tricks) const {
-  int trump_king = trump_suit_ * kNumRanks + 6;  // Rank index of "K".
-  int trump_queen = trump_suit_ * kNumRanks + 5;  // Rank index of "Q".
+  const auto [trump_king, trump_queen] = TrumpKingAndQueen();
   std::array<absl::InlinedVector<int, kNumRanks>, kNumPlayers> played_by;
   for (const Trick& trick : tricks) {
     for (const auto& [player, card] : trick) played_by[player].push_back(card);
@@ -718,15 +822,19 @@ std::string BeloteState::ActionToString(Player player, Action action) const {
 }
 
 namespace {
-std::string PhaseString(Phase phase) {
-  switch (phase) {
-    case Phase::kDeal: return "deal";
-    case Phase::kBid1: return "bid1";
-    case Phase::kBid2: return "bid2";
-    case Phase::kPlay: return "play";
-    case Phase::kGameOver: return "done";
+// Cards as a quoted list, e.g. ['10C', 'KC']. The quoting is part of the
+// observation-string format that tests pin, so it must not drift.
+template <typename Container>
+std::string CardListString(const Container& cards) {
+  std::string rv = "[";
+  bool first = true;
+  for (int card : cards) {
+    if (!first) absl::StrAppend(&rv, ", ");
+    first = false;
+    absl::StrAppend(&rv, "'", CardString(card), "'");
   }
-  return "";
+  absl::StrAppend(&rv, "]");
+  return rv;
 }
 
 template <typename Container>
@@ -740,7 +848,7 @@ std::string HandString(const Container& hand) {
 std::string BeloteState::ToString() const {
   std::string rv;
   absl::StrAppend(&rv, "Dealer: ", dealer_, "\n");
-  absl::StrAppend(&rv, "Phase: ", PhaseString(phase_), "\n");
+  absl::StrAppend(&rv, "Phase: ", PhaseToString(phase_), "\n");
   absl::StrAppend(&rv, "Hands: [");
   for (int p = 0; p < kNumPlayers; ++p) {
     if (p > 0) absl::StrAppend(&rv, ", ");
@@ -852,10 +960,17 @@ void BeloteState::ObservationTensor(Player player,
   WriteObservation(player, /*perfect_recall=*/false, values);
 }
 
-std::string BeloteState::InformationStateString(Player player) const {
+// Who passed, and the completed-trick history, are history rather than
+// present state, so they belong only in the perfect-recall string: the plain
+// observation must not carry them, and the observation tensor does not.
+std::string BeloteState::ObservationStringImpl(Player player,
+                                               bool perfect_recall) const {
   std::string rv;
   absl::StrAppend(&rv, "p", player);
-  absl::StrAppend(&rv, " hand:", HandString(hands_[player]));
+  absl::InlinedVector<int, kNumRanks> hand(hands_[player].begin(),
+                                           hands_[player].end());
+  absl::c_sort(hand);
+  absl::StrAppend(&rv, " hand:", CardListString(hand));
   absl::StrAppend(&rv, " dealer:", dealer_);
   if (turned_card_ != kInvalidAction) {
     absl::StrAppend(&rv, " turned:", CardString(turned_card_));
@@ -867,25 +982,41 @@ std::string BeloteState::InformationStateString(Player player) const {
   if (phase_ == Phase::kBid1 || phase_ == Phase::kBid2) {
     absl::StrAppend(&rv, " bidround:", phase_ == Phase::kBid1 ? "1" : "2");
   }
-  if (!bid1_passes_.empty()) {
-    absl::StrAppend(&rv, " passed1:[", absl::StrJoin(bid1_passes_, ", "), "]");
+  if (perfect_recall) {
+    if (!bid1_passes_.empty()) {
+      absl::StrAppend(&rv, " passed1:[", absl::StrJoin(bid1_passes_, ", "),
+                      "]");
+    }
+    if (!bid2_passes_.empty()) {
+      absl::StrAppend(&rv, " passed2:[", absl::StrJoin(bid2_passes_, ", "),
+                      "]");
+    }
   }
-  if (!bid2_passes_.empty()) {
-    absl::StrAppend(&rv, " passed2:[", absl::StrJoin(bid2_passes_, ", "), "]");
+  absl::InlinedVector<int, kNumPlayers> trick_cards;
+  for (const auto& [unused_player, card] : trick_) trick_cards.push_back(card);
+  absl::StrAppend(&rv, " trick:", CardListString(trick_cards));
+  absl::StrAppend(&rv, " played:", CardListString(played_cards_));
+  if (perfect_recall && tricks_played_ > 0) {
+    absl::StrAppend(&rv, " history:");
+    for (int i = 0; i < tricks_played_; ++i) {
+      if (i > 0) absl::StrAppend(&rv, "|");
+      for (int j = 0; j < kNumPlayers; ++j) {
+        if (j > 0) absl::StrAppend(&rv, ",");
+        absl::StrAppend(&rv, CardString(trick_history_[i][j]));
+      }
+    }
   }
-  absl::StrAppend(&rv, " trick:[");
-  for (int i = 0; i < trick_.size(); ++i) {
-    if (i > 0) absl::StrAppend(&rv, ", ");
-    absl::StrAppend(&rv, CardString(trick_[i].second));
-  }
-  absl::StrAppend(&rv, "]");
   absl::StrAppend(&rv, " points:[", team_points_[0], ", ", team_points_[1],
                   "]");
   return rv;
 }
 
+std::string BeloteState::InformationStateString(Player player) const {
+  return ObservationStringImpl(player, /*perfect_recall=*/true);
+}
+
 std::string BeloteState::ObservationString(Player player) const {
-  return InformationStateString(player);
+  return ObservationStringImpl(player, /*perfect_recall=*/false);
 }
 
 // Returns a clone with the other players' hands resampled, kept consistent

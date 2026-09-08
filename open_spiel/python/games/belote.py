@@ -184,6 +184,40 @@ def card_strength(card, trump_suit) -> int:
     )
 
 
+def beats(card, other, led_suit, trump_suit) -> bool:
+    """Whether `card` beats `other` within the same trick.
+
+    Depends only on the two cards, the led suit and the trump suit -- not on
+    anything else about the deal -- so it lives beside `card_points` and
+    `card_strength` rather than on the state, and a strategy can reason about
+    a hypothetical trick without one.
+    """
+    card_trump = card_suit(card) == trump_suit
+    other_trump = card_suit(other) == trump_suit
+
+    # Exactly one card is trump, so `card` wins iff it is the trump card.
+    if card_trump != other_trump:
+        return card_trump
+
+    # Both cards are trump, compare by trump ranking order
+    if card_trump and other_trump:
+        return card_strength(card, trump_suit) > card_strength(other, trump_suit)
+
+    card_led = card_suit(card) == led_suit
+    other_led = card_suit(other) == led_suit
+
+    # Exactly one card follows the led suit, so `card` wins iff it follows it.
+    if card_led != other_led:
+        return card_led
+
+    # Both cards follow led suit, compare by non-trump ranking order.
+    if card_led and other_led:
+        return card_strength(card, trump_suit) > card_strength(other, trump_suit)
+
+    # Neither card is trump nor led suit: card cannot beat other.
+    return False
+
+
 def team_of(player) -> int:
     """Returns the team id (0 or 1) that `player` belongs to."""
     return player % 2
@@ -292,22 +326,26 @@ class BeloteState(pyspiel.State):
     # the trump suit or whose contract it is -- so it is exposed the same way
     # rather than left for callers to reach into private attributes.
     #
-    # These return the live objects, not copies, matching `hands`: they sit
+    # These are methods rather than properties to match the rest of OpenSpiel:
+    # a game-specific state accessor reaches Python as a snake_case method
+    # (see `EuchreState::Upcard` and friends, bound in games_euchre.cc),
+    # because it is a pybind-bound C++ getter. Keeping the same shape here
+    # means a bot can be written against this game and against the C++
+    # `belote` once that one is bound, instead of one or the other.
+    #
+    # They return the live objects, not copies, matching `hands`: they sit
     # in the inner loop of Monte-Carlo agents that touch them thousands of
     # times per decision. Treat them as read-only.
 
-    @property
-    def phase(self) -> str:
+    def current_phase(self) -> str:
         """"deal", "bid1", "bid2", "play" or "done"."""
         return self._phase
 
-    @property
     def dealer(self) -> int:
         """The seat that dealt. Rotates on a redeal."""
         return self._dealer
 
-    @property
-    def turned_card(self) -> int | None:
+    def upcard(self) -> int | None:
         """The card turned face up for round 1, or None before the deal.
 
         Stays set after the auction resolves: it is public information every
@@ -315,28 +353,31 @@ class BeloteState(pyspiel.State):
         """
         return self._turned_card
 
-    @property
     def taker(self) -> int:
-        """The seat holding the contract, or -1 if the auction is unresolved."""
+        """The seat holding the contract, or -1 if the auction is unresolved.
+
+        Belote calls this seat the taker; it is what euchre calls the
+        declarer. `declarer_team` is the team it belongs to.
+        """
         return self._taker
 
-    @property
     def declarer_team(self) -> int:
         """The declaring team, or -1."""
         return self._declarer_team
 
-    @property
     def trump_suit(self) -> int:
         """Trump suit index, or -1 before the auction resolves."""
         return self._trump_suit
 
-    @property
     def bidding_round(self) -> int | None:
         """Which auction round is live, or resolved the contract: 1 or 2.
 
-        `phase` alone is not enough. It reads "bid2" the instant round 2
-        opens, before anyone in it has acted, and says nothing once the
-        auction is over -- but round 1 having four passes is durable.
+        None before the auction opens -- during the initial deal, and during
+        the redeal that follows four passes in round 2.
+
+        `current_phase` alone is not enough. It reads "bid2" the instant
+        round 2 opens, before anyone in it has acted, and says nothing once
+        the auction is over -- but round 1 having four passes is durable.
         """
         if self._taker >= 0:
             return 2 if len(self._bid1_passes) == _NUM_PLAYERS else 1
@@ -359,22 +400,18 @@ class BeloteState(pyspiel.State):
             return self._bid2_passes
         raise ValueError(f"bidding has rounds 1 and 2, not {round_number!r}")
 
-    @property
     def current_trick(self) -> list[tuple[int, int]]:
         """(player, card) pairs played so far in the trick in progress."""
         return self._trick
 
-    @property
     def trick_winners(self) -> list[int]:
         """The winning seat of each completed trick, in order."""
         return self._trick_winners
 
-    @property
     def played_cards(self) -> list[int]:
         """Every card played so far this deal."""
         return self._played_cards
 
-    @property
     def team_points(self) -> list[int]:
         """Trick points per team.
 
@@ -384,7 +421,6 @@ class BeloteState(pyspiel.State):
         """
         return self._team_points
 
-    @property
     def belote_holder(self) -> int:
         """The seat holding trump king AND queen, or -1.
 
@@ -396,7 +432,6 @@ class BeloteState(pyspiel.State):
         """
         return self._belote_player
 
-    @property
     def belote_announced(self) -> int:
         """How many of the two marriage cards have actually been played (0-2).
 
@@ -412,13 +447,17 @@ class BeloteState(pyspiel.State):
         """Every completed trick as (player, card) pairs in play order."""
         return self._reconstruct_tricks()
 
-    def trump_marriage(self) -> tuple[int, int]:
-        """The king and queen of the trump suit."""
-        return self._trump_king_and_queen()
+    def trump_marriage(self) -> tuple[int, int] | None:
+        """The king and queen of the trump suit, or None before there is one.
 
-    def beats(self, card, other, led_suit, trump_suit) -> bool:
-        """Does `card` beat `other`, given the led suit and trump?"""
-        return self._is_better(card, other, led_suit, trump_suit)
+        As a private helper this could assume a trump suit, since every
+        caller ran after the auction. A public caller cannot be assumed to
+        have checked, and the card ids computed from a trump of -1 are
+        negative nonsense rather than an error.
+        """
+        if self._trump_suit < 0:
+            return None
+        return self._trump_king_and_queen()
 
     def public_inference(self, tricks=None):
         """What the public history proves about the other hands: the suits
@@ -499,39 +538,12 @@ class BeloteState(pyspiel.State):
         # No cards of the led suit and no trumps: may play any card.
         return sorted(hand)
 
-    def _is_better(self, card, other, led_suit, trump) -> bool:
-        """Whether `card` beats `other` within the same trick."""
-        card_trump = card_suit(card) == trump
-        other_trump = card_suit(other) == trump
-
-        # Exactly one card is trump, so `card` wins iff it is the trump card.
-        if card_trump != other_trump:
-            return card_trump
-
-        # Both cards are trump, compare by trump ranking order
-        if card_trump and other_trump:
-            return card_strength(card, trump) > card_strength(other, trump)
-
-        card_led = card_suit(card) == led_suit
-        other_led = card_suit(other) == led_suit
-
-        # Exactly one card follows the led suit, so `card` wins iff it follows it.
-        if card_led != other_led:
-            return card_led
-
-        # Both cards follow led suit, compare by non-trump ranking order.
-        if card_led and other_led:
-            return card_strength(card, trump) > card_strength(other, trump)
-
-        # Neither card is trump nor led suit: card cannot beat other.
-        return False
-
     def _trick_winner(self, trick) -> int:
         """Returns the player currently winning `trick` (partial or complete)."""
         led_suit = card_suit(trick[0][1])
         best_player, best_card = trick[0]
         for player, card in trick[1:]:
-            if self._is_better(card, best_card, led_suit, self._trump_suit):
+            if beats(card, best_card, led_suit, self._trump_suit):
                 best_player, best_card = player, card
 
         return best_player

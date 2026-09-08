@@ -47,6 +47,12 @@ def _finish_dealing(state):
     state.apply_action(int(action))
 
 
+# Deals walked by test_consistent. Each is ~40 steps, and every step
+# compares two full observation tensors per player, so this is the
+# knob to turn if the test gets slow.
+_CONSISTENCY_DEALS = 20
+
+
 class BeloteTest(absltest.TestCase):
   """Tests for the BeloteGame and BeloteState classes."""
 
@@ -689,25 +695,80 @@ class BeloteTest(absltest.TestCase):
     state = game.new_initial_state()
     rng = np.random.default_rng(11)
     while not state.is_terminal():
-      self.assertEqual(state.phase, state._phase)
-      self.assertEqual(state.dealer, state._dealer)
-      self.assertEqual(state.turned_card, state._turned_card)
-      self.assertEqual(state.taker, state._taker)
-      self.assertEqual(state.declarer_team, state._declarer_team)
-      self.assertEqual(state.trump_suit, state._trump_suit)
-      self.assertEqual(state.current_trick, state._trick)
-      self.assertEqual(state.trick_winners, state._trick_winners)
-      self.assertEqual(state.played_cards, state._played_cards)
-      self.assertEqual(state.team_points, state._team_points)
-      self.assertEqual(state.belote_holder, state._belote_player)
+      self.assertEqual(state.current_phase(), state._phase)
+      self.assertEqual(state.dealer(), state._dealer)
+      self.assertEqual(state.upcard(), state._turned_card)
+      self.assertEqual(state.taker(), state._taker)
+      self.assertEqual(state.declarer_team(), state._declarer_team)
+      self.assertEqual(state.trump_suit(), state._trump_suit)
+      self.assertEqual(state.current_trick(), state._trick)
+      self.assertEqual(state.trick_winners(), state._trick_winners)
+      self.assertEqual(state.played_cards(), state._played_cards)
+      self.assertEqual(state.team_points(), state._team_points)
+      self.assertEqual(state.belote_holder(), state._belote_player)
       self.assertEqual(state.bid_passes(1), state._bid1_passes)
       self.assertEqual(state.bid_passes(2), state._bid2_passes)
       self.assertEqual(state.tricks(), state._reconstruct_tricks())
+      if state._trump_suit < 0:
+        self.assertIsNone(state.trump_marriage())
+      else:
+        self.assertEqual(state.trump_marriage(), state._trump_king_and_queen())
       if state.is_chance_node():
         outcomes, probs = zip(*state.chance_outcomes())
         state.apply_action(int(rng.choice(outcomes, p=probs)))
       else:
         state.apply_action(int(rng.choice(state.legal_actions())))
+
+  def test_public_state_view_is_methods_not_properties(self):
+    """OpenSpiel exposes a game-specific state accessor as a snake_case
+    method -- `EuchreState::Upcard` reaches Python as `state.upcard()`,
+    because it is a pybind-bound C++ getter. This game has a C++ twin, so a
+    property here would mean a bot cannot be written against both."""
+    state = pyspiel.load_game("python_belote").new_initial_state()
+    for name in (
+        "current_phase", "dealer", "upcard", "taker", "declarer_team",
+        "trump_suit", "bidding_round", "bid_passes", "current_trick",
+        "trick_winners", "played_cards", "team_points", "belote_holder",
+        "belote_announced", "tricks", "trump_marriage", "public_inference",
+    ):
+      self.assertTrue(
+          callable(getattr(state, name)), f"{name} must be a method")
+
+  def test_trump_marriage_is_none_before_a_trump_exists(self):
+    """As a private helper this could assume a trump suit; every caller ran
+    after the auction. Public callers cannot be assumed to have checked, and
+    the card ids computed from a trump of -1 are negative nonsense."""
+    state = pyspiel.load_game("python_belote").new_initial_state()
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    self.assertEqual(state.trump_suit(), -1)
+    self.assertIsNone(state.trump_marriage())
+
+    state.apply_action(belote.TAKE_ACTION)
+    self.assertGreaterEqual(state.trump_suit(), 0)
+    king, queen = state.trump_marriage()
+    self.assertEqual(belote.card_suit(king), state.trump_suit())
+    self.assertEqual(belote.card_suit(queen), state.trump_suit())
+    self.assertEqual(belote.card_rank_name(king), "K")
+    self.assertEqual(belote.card_rank_name(queen), "Q")
+
+  def test_bidding_round_is_none_before_the_auction_opens(self):
+    state = pyspiel.load_game("python_belote").new_initial_state()
+    self.assertEqual(state.current_phase(), "deal")
+    self.assertIsNone(state.bidding_round())
+
+  def test_beats_is_a_module_level_function(self):
+    """`beats` depends only on its arguments, so it belongs beside
+    `card_points` and `card_strength` -- a strategy must be able to weigh a
+    hypothetical trick without a state to hang the call on."""
+    clubs, hearts = 0, 2
+    seven_of_clubs = clubs * belote._NUM_RANKS + belote._RANK_NAMES.index("7")
+    ace_of_hearts = hearts * belote._NUM_RANKS + belote._RANK_NAMES.index("A")
+    # Clubs is trump: the 7 of trump beats the ace of a plain suit.
+    self.assertTrue(
+        belote.beats(seven_of_clubs, ace_of_hearts, hearts, clubs))
+    self.assertFalse(
+        belote.beats(ace_of_hearts, seven_of_clubs, hearts, clubs))
 
   def test_bid_passes_rejects_a_round_that_does_not_exist(self):
     state = pyspiel.load_game("python_belote").new_initial_state()
@@ -722,13 +783,13 @@ class BeloteTest(absltest.TestCase):
     state = game.new_initial_state()
     while state.is_chance_node():
       state.apply_action(state.legal_actions()[0])
-    self.assertEqual(state.phase, "bid1")
-    self.assertEqual(state.bidding_round, 1)
+    self.assertEqual(state.current_phase(), "bid1")
+    self.assertEqual(state.bidding_round(), 1)
 
     state.apply_action(belote.TAKE_ACTION)
     # The auction is over and phase has moved on, but it was won in round 1.
-    self.assertNotIn(state.phase, ("bid1", "bid2"))
-    self.assertEqual(state.bidding_round, 1)
+    self.assertNotIn(state.current_phase(), ("bid1", "bid2"))
+    self.assertEqual(state.bidding_round(), 1)
     self.assertEqual(len(state.bid_passes(1)), 0)
 
   def test_bidding_round_reports_two_after_four_passes(self):
@@ -738,7 +799,7 @@ class BeloteTest(absltest.TestCase):
       state.apply_action(state.legal_actions()[0])
     for _ in range(belote._NUM_PLAYERS):
       state.apply_action(belote.PASS_ACTION)
-    self.assertEqual(state.bidding_round, 2)
+    self.assertEqual(state.bidding_round(), 2)
     self.assertEqual(len(state.bid_passes(1)), belote._NUM_PLAYERS)
 
   def test_belote_announced_lags_belote_holder(self):
@@ -756,10 +817,10 @@ class BeloteTest(absltest.TestCase):
       outcomes, probs = zip(*state.chance_outcomes())
       state.apply_action(int(rng.choice(outcomes, p=probs)))
 
-    if state.belote_holder < 0:
+    if state.belote_holder() < 0:
       self.skipTest("this deal has no belote holding")
     # Holder known, nothing announced yet.
-    self.assertEqual(state.belote_announced, 0)
+    self.assertEqual(state.belote_announced(), 0)
 
     king, queen = state.trump_marriage()
     seen = 0
@@ -772,7 +833,7 @@ class BeloteTest(absltest.TestCase):
       state.apply_action(action)
       if action in (king, queen):
         seen += 1
-      self.assertEqual(state.belote_announced, seen)
+      self.assertEqual(state.belote_announced(), seen)
     self.assertEqual(seen, 2)
 
   def test_beats_agrees_with_trick_winners(self):
@@ -788,14 +849,14 @@ class BeloteTest(absltest.TestCase):
           state.apply_action(int(rng.choice(outcomes, p=probs)))
         else:
           state.apply_action(int(rng.choice(state.legal_actions())))
-      trump = state.trump_suit
+      trump = state.trump_suit()
       if trump < 0:
         continue
-      for trick, winner in zip(state.tricks(), state.trick_winners):
+      for trick, winner in zip(state.tricks(), state.trick_winners()):
         led_suit = belote.card_suit(trick[0][1])
         best_player, best_card = trick[0]
         for player, card in trick[1:]:
-          if state.beats(card, best_card, led_suit, trump):
+          if belote.beats(card, best_card, led_suit, trump):
             best_player, best_card = player, card
         self.assertEqual(best_player, winner)
 
@@ -811,7 +872,7 @@ class BeloteTest(absltest.TestCase):
         outcomes, probs = zip(*state.chance_outcomes())
         state.apply_action(int(rng.choice(outcomes, p=probs)))
         continue
-      if state.phase == "play" and len(state.trick_winners) >= 2:
+      if state.current_phase() == "play" and len(state.trick_winners()) >= 2:
         voids, _ = state.public_inference()
         player = state.current_player()
         world = state.resample_from_infostate(player, rng.random)
@@ -822,6 +883,103 @@ class BeloteTest(absltest.TestCase):
             self.assertNotIn(belote.card_suit(card), suits)
       state.apply_action(int(rng.choice(state.legal_actions())))
 
+
+  def test_consistent(self):
+    """Checks the Python and C++ game implementations are the same.
+
+    `kuhn_poker_test` does this by enumerating every state, which belote's
+    state space rules out, so this walks random deals instead and compares
+    both games at every step: what each offers, what each shows a player, and
+    the public view each exposes.
+    """
+    py_game = pyspiel.load_game("python_belote")
+    cc_game = pyspiel.load_game("belote")
+    self.assertEqual(py_game.information_state_tensor_size(),
+                     cc_game.information_state_tensor_size())
+    self.assertEqual(py_game.observation_tensor_size(),
+                     cc_game.observation_tensor_size())
+
+    for deal in range(_CONSISTENCY_DEALS):
+      rng = np.random.default_rng(deal)
+      py_state = py_game.new_initial_state()
+      cc_state = cc_game.new_initial_state()
+      while not py_state.is_terminal():
+        where = f"deal {deal}, history {py_state.history()}"
+        self.assertEqual(py_state.is_chance_node(), cc_state.is_chance_node(),
+                         where)
+        self.assertEqual(py_state.current_player(), cc_state.current_player(),
+                         where)
+        self.assertEqual(py_state.legal_actions(), cc_state.legal_actions(),
+                         where)
+        self._assert_public_view_agrees(py_state, cc_state, where)
+        for player in range(belote._NUM_PLAYERS):
+          self.assertEqual(py_state.information_state_string(player),
+                           cc_state.information_state_string(player), where)
+          self.assertEqual(py_state.observation_string(player),
+                           cc_state.observation_string(player), where)
+          np.testing.assert_array_equal(
+              py_state.information_state_tensor(player),
+              cc_state.information_state_tensor(player), where)
+          np.testing.assert_array_equal(
+              py_state.observation_tensor(player),
+              cc_state.observation_tensor(player), where)
+
+        if py_state.is_chance_node():
+          py_outcomes = py_state.chance_outcomes()
+          self.assertEqual(py_outcomes, cc_state.chance_outcomes(), where)
+          outcomes, probs = zip(*py_outcomes)
+          action = int(rng.choice(outcomes, p=probs))
+        else:
+          action = int(rng.choice(py_state.legal_actions()))
+        py_state.apply_action(action)
+        cc_state.apply_action(action)
+
+      self.assertTrue(cc_state.is_terminal(), f"deal {deal}")
+      self.assertEqual(py_state.returns(), cc_state.returns(), f"deal {deal}")
+
+  def _assert_public_view_agrees(self, py_state, cc_state, where):
+    """Every accessor added for agents must read the same on both games."""
+    self.assertEqual(py_state.current_phase(), cc_state.current_phase(), where)
+    self.assertEqual(py_state.dealer(), cc_state.dealer(), where)
+    self.assertEqual(py_state.upcard(), cc_state.upcard(), where)
+    self.assertEqual(py_state.taker(), cc_state.taker(), where)
+    self.assertEqual(py_state.declarer_team(), cc_state.declarer_team(), where)
+    self.assertEqual(py_state.trump_suit(), cc_state.trump_suit(), where)
+    self.assertEqual(py_state.bidding_round(), cc_state.bidding_round(), where)
+    self.assertEqual(py_state.bid_passes(1), cc_state.bid_passes(1), where)
+    self.assertEqual(py_state.bid_passes(2), cc_state.bid_passes(2), where)
+    self.assertEqual([tuple(pair) for pair in py_state.current_trick()],
+                     [tuple(pair) for pair in cc_state.current_trick()], where)
+    self.assertEqual(list(py_state.trick_winners()),
+                     list(cc_state.trick_winners()), where)
+    self.assertEqual(list(py_state.played_cards()),
+                     list(cc_state.played_cards()), where)
+    self.assertEqual(list(py_state.team_points()),
+                     list(cc_state.team_points()), where)
+    self.assertEqual(py_state.belote_holder(), cc_state.belote_holder(), where)
+    self.assertEqual(py_state.belote_announced(), cc_state.belote_announced(),
+                     where)
+    self.assertEqual(py_state.trump_marriage(), cc_state.trump_marriage(),
+                     where)
+    self.assertEqual([sorted(hand) for hand in py_state.hands],
+                     [sorted(hand) for hand in cc_state.hands], where)
+    self.assertEqual(
+        [[tuple(pair) for pair in trick] for trick in py_state.tricks()],
+        [[tuple(pair) for pair in trick] for trick in cc_state.tricks()], where)
+    self.assertEqual(py_state.public_inference(), cc_state.public_inference(),
+                     where)
+
+  def test_beats_matches_the_cc_implementation(self):
+    """`beats` is duplicated in C++; a strategy must rank a trick the same
+    way whichever game it is pointed at."""
+    for trump in range(belote._NUM_SUITS):
+      for led_suit in range(belote._NUM_SUITS):
+        for card in range(belote._NUM_CARDS):
+          for other in range(belote._NUM_CARDS):
+            self.assertEqual(
+                belote.beats(card, other, led_suit, trump),
+                pyspiel.belote.beats(card, other, led_suit, trump),
+                f"beats({card}, {other}, {led_suit}, {trump})")
 
 
 if __name__ == "__main__":
