@@ -20,32 +20,34 @@
 // via the "prise" procedure: 5 cards are dealt to each player, the next
 // stock card is turned face up, and players in turn may take it (round 1)
 // or, if everyone passes, choose one of the three other suits (round 2). If
-// everyone passes twice, the deal is redealt with the next player as
-// dealer. This can in principle repeat indefinitely, so the number of
-// redeals is capped by the "max_redeals" game parameter (default 10); if
-// every deal keeps failing to produce a taker all the way up to that
-// cap, the game ends there as a flat draw (all returns 0) rather than
-// redealing forever. Card play follows standard suit- and trump-following
-// obligations, and scoring uses the standard 162-point deck (152 card points
-// + 10 for the last trick), with an all-or-nothing rule: the declaring team
-// keeps its trick points only if it scores strictly more than the
-// defenders; otherwise the defending team collects all trick points. If one
-// team wins all 8 tricks ("capot"), the last-trick bonus is 100 instead of
-// 10, so the deck is worth 252 points instead of 162, and that full total
-// goes to whichever team scores higher (the capot-winning team on success,
-// or the defenders' 252 on a failed contract).
+// everyone passes twice, the game ends as a draw (all returns 0): real belote
+// would throw the cards in and redeal, but a state here is a single deal,
+// and a thrown-in deal scores nothing -- the same choice as bridge's passed
+// out hand and euchre without "stick the dealer". Card play follows standard
+// suit- and trump-following obligations, and scoring uses the standard
+// 162-point deck (152 card points + 10 for the last trick), with an
+// all-or-nothing rule: the declaring team keeps its trick points only if it
+// scores strictly more than the defenders; otherwise the defending team
+// collects all trick points. If one team wins all 8 tricks ("capot"), the
+// last-trick bonus is 100 instead of 10, so the deck is worth 252 points
+// instead of 162, and that full total goes to whichever team scores higher
+// (the capot-winning team on success, or the defenders' 252 on a failed
+// contract).
 //
 // The "belote/rebelote" bonus (20 extra points awarded to whichever team has
 // a single player holding both the King and Queen of the trump suit) is
 // always applied. Per official rules, this bonus actually requires the
 // holder to announce "belote" then "rebelote" when playing the first and
 // second of those two cards respectively, and is forfeited if either
-// announcement is omitted; this implementation simplifies that away and
-// always grants it to whichever team holds the marriage, with no
-// announcement action in the game. The 20 points themselves, and the way
-// they're used, do follow official rules: they count toward the declaring
-// team's contract threshold (its own or the defenders') and are always
-// credited to the holder's team, win or lose.
+// announcement is omitted; this implementation simplifies that away: there
+// is no announcement action, and the holder is instead announced
+// automatically, to every player, the moment they play the first of the two
+// cards (the "belote" field of the observations). Conversely, a player who
+// plays one of the two without an announcement is publicly known not to
+// hold the other. The 20 points themselves, and the way they're used, do
+// follow official rules: they count toward the declaring team's contract
+// threshold (its own or the defenders') and are always credited to the
+// holder's team, win or lose.
 
 #include <array>
 #include <functional>
@@ -72,10 +74,6 @@ inline constexpr int kCapotLastTrickBonus = 100;
 inline constexpr int kMaxScoreCapot =
     kMaxScore - kLastTrickBonus + kCapotLastTrickBonus;
 inline constexpr int kBeloteRebeloteBonus = 20;
-// Safety valve: real belote redeals with no limit if bidding keeps failing,
-// but that can never terminate in principle, so redeals are capped and the
-// deal ends as a flat draw if the cap is ever exceeded.
-inline constexpr int kDefaultMaxRedeals = 10;
 // Longest possible deal_schedule_: the initial deal (3+2 cards to each of 4
 // players, plus the turned card).
 inline constexpr int kMaxDealScheduleSize = kNumPlayers * 5 + 1;
@@ -132,8 +130,7 @@ struct VoidAndTrumpBounds {
 
 class BeloteState : public State {
  public:
-  explicit BeloteState(std::shared_ptr<const Game> game, Player dealer,
-                       int max_redeals);
+  explicit BeloteState(std::shared_ptr<const Game> game, Player dealer);
   Player CurrentPlayer() const override;
   std::string ActionToString(Player player, Action action) const override;
   std::string ToString() const override;
@@ -187,8 +184,8 @@ class BeloteState : public State {
   int DeclarerTeam() const { return declarer_team_; }
   int TrumpSuit() const { return trump_suit_; }
   // Which auction round is live, or resolved the contract: 1 or 2, and
-  // absl::nullopt before the auction opens (during the initial deal, and
-  // during the redeal that follows four passes in round 2). CurrentPhase()
+  // absl::nullopt before the auction opens (during the initial deal), and
+  // after four passes in round 2 end the game. CurrentPhase()
   // alone cannot answer this: it reads kBid2 the instant round 2 opens,
   // before anyone in it has acted, and says nothing once the auction is
   // over -- but round 1 having four passes is durable.
@@ -217,9 +214,10 @@ class BeloteState : public State {
   Player BeloteHolder() const {
     return belote_holder_ >= 0 ? belote_holder_ : -1;
   }
-  // How many of the two marriage cards have actually been played (0-2). The
-  // rules-facing counterpart to BeloteHolder(): 0 means the holding is not
-  // yet public knowledge.
+  // How many of the two marriage cards the holder has actually played (0-2).
+  // The rules-facing counterpart to BeloteHolder(): 0 means the holding is
+  // not yet public knowledge, and anything above 0 means it has been
+  // announced to every player.
   int BeloteAnnounced() const;
   // Every trick as (player, card) pairs in play order, the trick in progress
   // included.
@@ -281,8 +279,15 @@ class BeloteState : public State {
   // belote holder). At most 2 cards can ever be pinned to one player.
   std::array<absl::InlinedVector<int, 2>, kNumPlayers> PublicCardPins(
       Player player_id) const;
+  // The seat that has announced belote, or kInvalidPlayer if nobody has.
+  Player AnnouncedBeloteHolder() const;
+  // The counterpart to the belote pin: once exactly one of the trump King and
+  // Queen has been played, by a seat that did not announce belote, that seat
+  // is publicly known not to hold the other. Returns (seat, card), or
+  // (kInvalidPlayer, -1) when nothing is known.
+  std::pair<Player, int> PublicCardBar() const;
 
-  Player dealer_;
+  const Player dealer_;
   Hands hands_{};
   // Cards still in the stock, tracked as a membership bitmap (rather than a
   // vector requiring O(n) erase-by-value and repeated sorting) since cards
@@ -299,7 +304,7 @@ class BeloteState : public State {
   std::array<Player, kNumPlayers> bid_turn_order_{};
   int bid_pointer_ = 0;
   // Who has passed, per bidding round. `bid_pointer_` alone can't answer
-  // this: it resets to 0 between rounds and on a redeal, so without these
+  // this: it resets to 0 between rounds, so without these
   // the auction is unrecoverable from the state -- and a bid1 information
   // state was byte-identical to the bid2 one that follows it (same 5 cards,
   // same turned card, no trump yet), which is a perfect-recall violation: a
@@ -308,9 +313,6 @@ class BeloteState : public State {
   // public, informative evidence about the hands still held.
   absl::InlinedVector<Player, kNumPlayers> bid1_passes_;
   absl::InlinedVector<Player, kNumPlayers> bid2_passes_;
-
-  const int max_redeals_;
-  int redeal_count_ = 0;
 
   Player taker_ = kInvalidPlayer;
   int trump_suit_ = -1;
@@ -337,12 +339,13 @@ class BeloteState : public State {
 
 class BeloteGame : public Game {
  public:
+  // Fails if "dealer" is not a seat (0-3).
   explicit BeloteGame(const GameParameters& params);
   int NumDistinctActions() const override { return kNumDistinctActions; }
   int MaxChanceOutcomes() const override { return kNumCards; }
   std::unique_ptr<State> NewInitialState() const override {
     return std::unique_ptr<State>(
-        new BeloteState(shared_from_this(), dealer_, max_redeals_));
+        new BeloteState(shared_from_this(), dealer_));
   }
   int NumPlayers() const override { return kNumPlayers; }
   // Loose bounds that also cover a capot (252 instead of 162) and the
@@ -357,16 +360,13 @@ class BeloteGame : public Game {
   std::vector<int> InformationStateTensorShape() const override;
   std::vector<int> ObservationTensorShape() const override;
   int MaxGameLength() const override {
-    // Each deal attempt is dealing (~32 draws) + bidding (up to 8 calls);
-    // this can repeat up to max_redeals+1 times before the redeal cap
-    // forces a flat draw, followed by card play (32 plays) if a deal
-    // succeeds.
-    return (max_redeals_ + 1) * (kNumCards + 8) + kNumCards;
+    // Dealing the whole deck (32 draws, when someone takes), up to 8 bids,
+    // then 32 card plays.
+    return kNumCards + 2 * kNumPlayers + kNumCards;
   }
 
  private:
   const Player dealer_;
-  const int max_redeals_;
 };
 
 }  // namespace belote

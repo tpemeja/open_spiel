@@ -109,6 +109,11 @@ class GamesBeloteTest(absltest.TestCase):
     self.assertLen(state.played_cards(), 1)
     self.assertLen(state.tricks(), 1)
 
+  def test_invalid_parameters_are_rejected(self):
+    for params in ('dealer=-1', 'dealer=4'):
+      with self.assertRaises(pyspiel.SpielError, msg=params):
+        pyspiel.load_game(f'belote({params})')
+
   def test_bid_passes_rejects_a_round_that_does_not_exist(self):
     state = pyspiel.load_game('belote').new_initial_state()
     with self.assertRaises(pyspiel.SpielError):

@@ -14,8 +14,10 @@
 
 #include "open_spiel/games/belote/belote.h"
 
+#include <functional>
 #include <memory>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "open_spiel/abseil-cpp/absl/algorithm/container.h"
@@ -33,7 +35,6 @@ void BasicGameTests() {
   testing::LoadGameTest("belote");
   testing::ChanceOutcomesTest(*LoadGame("belote"));
   testing::RandomSimTest(*LoadGame("belote"), 100);
-  testing::RandomSimTest(*LoadGame("belote(max_redeals=0)"), 100);
 }
 
 // Random-simulate many games and check invariants that must hold regardless
@@ -59,7 +60,7 @@ void ManyRandomGamesInvariantsTest() {
       }
       state->ApplyAction(action);
       ++num_actions;
-      SPIEL_CHECK_LE(num_actions, 1500);
+      SPIEL_CHECK_LE(num_actions, game->MaxGameLength());
     }
     std::vector<double> returns = state->Returns();
     SPIEL_CHECK_EQ(returns.size(), kNumPlayers);
@@ -69,35 +70,18 @@ void ManyRandomGamesInvariantsTest() {
   }
 }
 
-// A redeal cap of 0 forces the very first failed bidding round (all 8 passes
-// across bid1+bid2) to end the game as a flat draw instead of redealing.
-void MaxRedealsFlatDrawTest() {
-  std::shared_ptr<const Game> game = LoadGame("belote(max_redeals=0)");
-  std::mt19937 rng(13579);
-  bool saw_flat_draw = false;
-  for (int i = 0; i < 200 && !saw_flat_draw; ++i) {
-    std::unique_ptr<State> state = game->NewInitialState();
-    while (!state->IsTerminal()) {
-      if (state->IsChanceNode()) {
-        std::vector<std::pair<Action, double>> outcomes =
-            state->ChanceOutcomes();
-        state->ApplyAction(SampleAction(outcomes, rng).first);
-        continue;
-      }
-      std::vector<Action> legal_actions = state->LegalActions();
-      // Always pass to force a flat draw as soon as possible.
-      if (absl::c_linear_search(legal_actions, kPassAction)) {
-        state->ApplyAction(kPassAction);
-      } else {
-        state->ApplyAction(legal_actions[0]);
-      }
-    }
-    std::vector<double> returns = state->Returns();
-    if (absl::c_all_of(returns, [](double r) { return r == 0.0; })) {
-      saw_flat_draw = true;
-    }
+// If all 8 calls (4 in each round) are passes, the deal is thrown in and the
+// game ends as a draw -- there is no redeal.
+void AllPassEndsTheGameAsADrawTest() {
+  std::shared_ptr<const Game> game = LoadGame("belote");
+  std::unique_ptr<State> state = game->NewInitialState();
+  while (state->IsChanceNode()) state->ApplyAction(state->LegalActions()[0]);
+  for (int i = 0; i < 2 * kNumPlayers; ++i) {
+    SPIEL_CHECK_FALSE(state->IsTerminal());
+    state->ApplyAction(kPassAction);
   }
-  SPIEL_CHECK_TRUE(saw_flat_draw);
+  SPIEL_CHECK_TRUE(state->IsTerminal());
+  SPIEL_CHECK_EQ(state->Returns(), std::vector<double>(kNumPlayers, 0.0));
 }
 
 // Applies chance actions (the first legal one each time, for determinism)
@@ -164,23 +148,6 @@ void AuctionPassesAreRecordedInBidOrderTest() {
       absl::StrCat("passed2:[", third, "]")));
 }
 
-// A redeal deals brand-new hands, so the previous auction's passes say
-// nothing about them and must not carry over.
-void RedealClearsTheAuctionRecordTest() {
-  std::shared_ptr<const Game> game = LoadGame("belote");
-  std::unique_ptr<State> state = game->NewInitialState();
-  DealInitialHands(state.get());
-
-  for (int i = 0; i < 8; ++i) {  // 4 passes in round 1, 4 in round 2.
-    state->ApplyAction(kPassAction);
-  }
-
-  SPIEL_CHECK_TRUE(state->IsChanceNode());  // Redealt, not a flat draw.
-  std::string info = state->InformationStateString(0);
-  SPIEL_CHECK_FALSE(absl::StrContains(info, "passed1:"));
-  SPIEL_CHECK_FALSE(absl::StrContains(info, "passed2:"));
-}
-
 // Resampling must never change what `p` can already see: their own hand and
 // all public information (dealer, trump, tricks, points, ...), captured
 // here via information-state equality, must be identical before and after.
@@ -216,6 +183,108 @@ void ResampleFromInfostateTest() {
   }
 }
 
+// Plays random games, calling `visit` on every card-play decision.
+void ForEachRandomPlayState(
+    int num_games, int seed,
+    const std::function<void(const BeloteState&)>& visit) {
+  std::shared_ptr<const Game> game = LoadGame("belote");
+  std::mt19937 rng(seed);
+  for (int i = 0; i < num_games; ++i) {
+    std::unique_ptr<State> state = game->NewInitialState();
+    while (!state->IsTerminal()) {
+      if (state->IsChanceNode()) {
+        state->ApplyAction(SampleAction(state->ChanceOutcomes(), rng).first);
+        continue;
+      }
+      const auto& belote_state = static_cast<const BeloteState&>(*state);
+      if (belote_state.CurrentPhase() == Phase::kPlay) visit(belote_state);
+      std::vector<Action> actions = state->LegalActions();
+      std::uniform_int_distribution<int> dis(0, actions.size() - 1);
+      state->ApplyAction(actions[dis(rng)]);
+    }
+  }
+}
+
+// Belote is announced to every player the moment the holder plays the first
+// of the trump King and Queen -- and not before, since until then the holding
+// is private.
+void BeloteAnnouncementIsPublicTest() {
+  int num_announced = 0;
+  int num_unannounced_holders = 0;
+  ForEachRandomPlayState(300, 2468, [&](const BeloteState& state) {
+    const int ann_offset = kNumPlayers + kNumCards + kNumPlayers + kNumCards +
+                           (kNumSuits + 1) + kNumPlayers + 3 +
+                           kNumPlayers * kNumCards + kNumCards + 2;
+    bool announced = state.BeloteAnnounced() > 0;
+    if (announced) ++num_announced;
+    if (state.BeloteHolder() >= 0 && !announced) ++num_unannounced_holders;
+    std::string expected = absl::StrCat(" belote:", state.BeloteHolder(), " ");
+    for (Player p = 0; p < kNumPlayers; ++p) {
+      SPIEL_CHECK_EQ(absl::StrContains(state.InformationStateString(p),
+                                       " belote:"),
+                     announced);
+      SPIEL_CHECK_EQ(absl::StrContains(state.ObservationString(p), " belote:"),
+                     announced);
+      if (announced) {
+        SPIEL_CHECK_TRUE(
+            absl::StrContains(state.InformationStateString(p), expected));
+      }
+      std::vector<float> observation = state.State::ObservationTensor(p);
+      std::vector<float> infostate = state.State::InformationStateTensor(p);
+      for (Player seat = 0; seat < kNumPlayers; ++seat) {
+        float bit = announced && seat == state.BeloteHolder() ? 1 : 0;
+        SPIEL_CHECK_EQ(observation[ann_offset + seat], bit);
+        SPIEL_CHECK_EQ(infostate[ann_offset + seat], bit);
+      }
+    }
+  });
+  SPIEL_CHECK_GT(num_announced, 0);
+  SPIEL_CHECK_GT(num_unannounced_holders, 0);
+}
+
+// Once exactly one of the trump King and Queen has been played, whether it
+// was announced is public, and resampling must follow it both ways: the
+// other card stays with an announced holder, and never lands with a seat
+// that played its partner card without announcing.
+void ResampleFollowsBeloteAnnouncementTest() {
+  UniformProbabilitySampler sampler;
+  int num_pinned = 0;
+  int num_barred = 0;
+  ForEachRandomPlayState(1000, 97531, [&](const BeloteState& state) {
+    const auto [king, queen] = *state.TrumpMarriage();
+    std::vector<int> played = state.PlayedCards();
+    bool king_played = absl::c_linear_search(played, king);
+    bool queen_played = absl::c_linear_search(played, queen);
+    if (king_played == queen_played) return;
+    int played_card = king_played ? king : queen;
+    int other_card = king_played ? queen : king;
+    Player played_by = kInvalidPlayer;
+    for (const auto& trick : state.Tricks()) {
+      for (const auto& [p, c] : trick) {
+        if (c == played_card) played_by = p;
+      }
+    }
+    SPIEL_CHECK_GE(played_by, 0);
+    bool announced = state.BeloteAnnounced() > 0;
+    SPIEL_CHECK_EQ(announced, state.BeloteHolder() == played_by);
+    for (Player observer = 0; observer < kNumPlayers; ++observer) {
+      if (observer == played_by) continue;
+      for (int i = 0; i < 5; ++i) {
+        std::unique_ptr<State> resampled =
+            state.ResampleFromInfostate(observer, sampler);
+        std::vector<int> hand = static_cast<const BeloteState&>(*resampled)
+                                    .PlayerHands()[played_by];
+        SPIEL_CHECK_EQ(absl::c_linear_search(hand, other_card), announced);
+        SPIEL_CHECK_EQ(state.InformationStateString(observer),
+                       resampled->InformationStateString(observer));
+      }
+      ++(announced ? num_pinned : num_barred);
+    }
+  });
+  SPIEL_CHECK_GT(num_pinned, 0);
+  SPIEL_CHECK_GT(num_barred, 0);
+}
+
 }  // namespace
 }  // namespace belote
 }  // namespace open_spiel
@@ -223,9 +292,10 @@ void ResampleFromInfostateTest() {
 int main(int argc, char** argv) {
   open_spiel::belote::BasicGameTests();
   open_spiel::belote::ManyRandomGamesInvariantsTest();
-  open_spiel::belote::MaxRedealsFlatDrawTest();
+  open_spiel::belote::AllPassEndsTheGameAsADrawTest();
   open_spiel::belote::BidRoundsAreDistinguishableInformationStatesTest();
   open_spiel::belote::AuctionPassesAreRecordedInBidOrderTest();
-  open_spiel::belote::RedealClearsTheAuctionRecordTest();
   open_spiel::belote::ResampleFromInfostateTest();
+  open_spiel::belote::BeloteAnnouncementIsPublicTest();
+  open_spiel::belote::ResampleFollowsBeloteAnnouncementTest();
 }

@@ -51,7 +51,6 @@ const GameType kGameType{
     /*parameter_specification=*/
     {
         {"dealer", GameParameter(0)},
-        {"max_redeals", GameParameter(kDefaultMaxRedeals)},
     }};
 
 std::shared_ptr<const Game> Factory(const GameParameters& params) {
@@ -190,17 +189,19 @@ int CardStrength(int card, int trump_suit) {
 
 BeloteGame::BeloteGame(const GameParameters& params)
     : Game(kGameType, params),
-      dealer_(ParameterValue<int>("dealer")),
-      max_redeals_(ParameterValue<int>("max_redeals")) {}
+      dealer_(ParameterValue<int>("dealer")) {
+  SPIEL_CHECK_GE(dealer_, 0);
+  SPIEL_CHECK_LT(dealer_, kNumPlayers);
+}
 
 std::vector<int> BeloteGame::InformationStateTensorShape() const {
   // player(4) + hand(32) + dealer(4) + turned_card(32) + trump_suit(5) +
   // declarer(4) + bid_round(3) + current_trick(4 * 32) + cards_played(32) +
-  // team_points(2) + bid1_passes(4) + bid2_passes(4) +
+  // team_points(2) + belote_announcer(4) + bid1_passes(4) + bid2_passes(4) +
   // trick_history(8 * 4 * 32) + trick_winners(8 * 4).
   int num_tricks = kNumCards / kNumPlayers;
   return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 + 3 +
-          kNumPlayers * kNumCards + kNumCards + 2 + 4 + 4 +
+          kNumPlayers * kNumCards + kNumCards + 2 + kNumPlayers + 4 + 4 +
           num_tricks * kNumPlayers * kNumCards + num_tricks * kNumPlayers};
 }
 
@@ -208,16 +209,14 @@ std::vector<int> BeloteGame::ObservationTensorShape() const {
   // Same as the information state tensor, without the per-round pass
   // history, trick history, or trick winners.
   return {4 + kNumCards + 4 + kNumCards + (kNumSuits + 1) + 4 + 3 +
-          kNumPlayers * kNumCards + kNumCards + 2};
+          kNumPlayers * kNumCards + kNumCards + 2 + kNumPlayers};
 }
 
-BeloteState::BeloteState(std::shared_ptr<const Game> game, Player dealer,
-                         int max_redeals)
+BeloteState::BeloteState(std::shared_ptr<const Game> game, Player dealer)
     : State(game),
       dealer_(dealer),
       deal_schedule_(InitialDealSchedule(dealer)),
-      bid_turn_order_(OrderFrom((dealer + 1) % kNumPlayers)),
-      max_redeals_(max_redeals) {
+      bid_turn_order_(OrderFrom((dealer + 1) % kNumPlayers)) {
   in_deck_.fill(true);
   deck_size_ = kNumCards;
 }
@@ -600,6 +599,28 @@ VoidAndTrumpBounds BeloteState::InferVoidAndTrumpBounds(
   return result;
 }
 
+Player BeloteState::AnnouncedBeloteHolder() const {
+  return BeloteAnnounced() > 0 ? belote_holder_ : kInvalidPlayer;
+}
+
+std::pair<Player, int> BeloteState::PublicCardBar() const {
+  // With a holder, a lone played marriage card was theirs, and announced.
+  if (trump_suit_ < 0 || belote_holder_ >= 0) return {kInvalidPlayer, -1};
+  const auto [trump_king, trump_queen] = TrumpKingAndQueen();
+  bool king_played = absl::c_linear_search(played_cards_, trump_king);
+  bool queen_played = absl::c_linear_search(played_cards_, trump_queen);
+  if (king_played == queen_played) return {kInvalidPlayer, -1};
+  int played = king_played ? trump_king : trump_queen;
+  for (const Trick& trick : ReconstructTricks()) {
+    for (const auto& [player, card] : trick) {
+      if (card == played) {
+        return {player, king_played ? trump_queen : trump_king};
+      }
+    }
+  }
+  SpielFatalError("A played card is missing from the tricks.");
+}
+
 std::array<absl::InlinedVector<int, 2>, kNumPlayers> BeloteState::PublicCardPins(
     Player player_id) const {
   std::array<absl::InlinedVector<int, 2>, kNumPlayers> pins;
@@ -695,30 +716,9 @@ void BeloteState::ApplyBid2Action(int action, Player player) {
     bid2_passes_.push_back(player);
     ++bid_pointer_;
     if (bid_pointer_ == kNumPlayers) {
-      if (redeal_count_ >= max_redeals_) {
-        // Redeal cap reached: rather than redealing forever, end the game
-        // here as a flat draw.
-        phase_ = Phase::kGameOver;
-        returns_.fill(0.0);
-        return;
-      }
-      // Everyone passed twice: reshuffle and redeal, dealer rotates.
-      ++redeal_count_;
-      dealer_ = (dealer_ + 1) % kNumPlayers;
-      for (auto& hand : hands_) hand.clear();
-      turned_card_ = kInvalidAction;
-      in_deck_.fill(true);
-      deck_size_ = kNumCards;
-      bid_turn_order_ = OrderFrom((dealer_ + 1) % kNumPlayers);
-      bid_pointer_ = 0;
-      // A redeal starts a brand-new auction on brand-new hands: the
-      // previous one's passes say nothing about these cards.
-      bid1_passes_.clear();
-      bid2_passes_.clear();
-      deal_schedule_ = InitialDealSchedule(dealer_);
-      deal_index_ = 0;
-      after_deal_phase_ = Phase::kBid1;
-      phase_ = Phase::kDeal;
+      // Everyone passed twice: the deal is thrown in and scores nothing.
+      phase_ = Phase::kGameOver;
+      returns_.fill(0.0);
     }
   } else {
     int suit = action - kChooseSuitActionBase;
@@ -922,6 +922,11 @@ void BeloteState::WriteObservation(Player player, bool perfect_recall,
   it[0] = team_points_[0] / static_cast<float>(kMaxScoreCapot);
   it[1] = team_points_[1] / static_cast<float>(kMaxScoreCapot);
   it += 2;
+  // Who announced belote, if anyone has. Public the moment the holder plays
+  // the first of the trump King and Queen, and stays so.
+  Player belote_announcer = AnnouncedBeloteHolder();
+  if (belote_announcer >= 0) it[belote_announcer] = 1;
+  it += kNumPlayers;
   if (perfect_recall) {
     // Who passed, per round, indexed by absolute player id. History rather
     // than present state, hence perfect-recall only -- and public history:
@@ -979,6 +984,10 @@ std::string BeloteState::ObservationStringImpl(Player player,
     absl::StrAppend(&rv, " trump:", std::string(1, kSuitChar[trump_suit_]));
   }
   if (taker_ >= 0) absl::StrAppend(&rv, " declarer:", taker_);
+  Player belote_announcer = AnnouncedBeloteHolder();
+  if (belote_announcer >= 0) {
+    absl::StrAppend(&rv, " belote:", belote_announcer);
+  }
   if (phase_ == Phase::kBid1 || phase_ == Phase::kBid2) {
     absl::StrAppend(&rv, " bidround:", phase_ == Phase::kBid1 ? "1" : "2");
   }
@@ -1023,7 +1032,8 @@ std::string BeloteState::ObservationString(Player player) const {
 // with `player_id`'s information state: own hand and public history
 // untouched, cards pinned by `PublicCardPins` kept with their known holder,
 // and the rest resampled via `BipartiteAssign` under the void-suit and
-// trump-strength constraints from `InferVoidAndTrumpBounds`. `rng` is a
+// trump-strength constraints from `InferVoidAndTrumpBounds` and the card
+// barred by `PublicCardBar`. `rng` is a
 // zero-argument callable returning a uniform double in [0, 1), used to
 // drive every shuffle so this respects the caller's RNG/seed. Mirrors
 // belote.py's `resample_from_infostate`.
@@ -1051,8 +1061,11 @@ std::unique_ptr<State> BeloteState::ResampleFromInfostate(
 
   VoidAndTrumpBounds bounds = InferVoidAndTrumpBounds(tricks);
   int trump = trump_suit_;
-  std::function<bool(Player, int)> allowed = [&bounds, trump](Player p,
-                                                              int card) {
+  const auto [barred_player, barred_card] = PublicCardBar();
+  std::function<bool(Player, int)> allowed = [&bounds, trump, barred_player,
+                                              barred_card](Player p,
+                                                           int card) {
+    if (p == barred_player && card == barred_card) return false;
     int suit = CardSuit(card);
     if (bounds.void_suits[p][suit]) return false;
     int bound = bounds.max_trump_strength[p];

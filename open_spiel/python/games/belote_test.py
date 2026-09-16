@@ -130,30 +130,24 @@ class BeloteTest(absltest.TestCase):
     all_cards = sorted(c for hand in state.hands for c in hand)
     self.assertEqual(all_cards, list(range(32)))
 
-  def test_all_pass_twice_redeals_and_rotates_dealer(self):
-    """If everyone passes both rounds, the deal restarts with next dealer."""
+  def test_all_pass_twice_ends_the_game_as_a_draw(self):
+    """If everyone passes both rounds, the deal is thrown in: no redeal."""
     game = belote.BeloteGame()
     state = game.new_initial_state()
-    original_dealer = state._dealer
     _deal_hands(state)
     for _ in range(8):  # 4 passes in round 1, 4 in round 2.
+      self.assertFalse(state.is_terminal())
       state.apply_action(belote.PASS_ACTION)
-
-    self.assertEqual(state._phase, "deal")
-    self.assertEqual(state._dealer, (original_dealer + 1) % 4)
-    self.assertEqual(state.hands, [[] for _ in range(4)])
-
-  def test_redeal_cap_ends_game_as_flat_draw(self):
-    """Once max_redeals is exceeded, the game ends instead of redealing."""
-    game = belote.BeloteGame({"max_redeals": 1})
-    state = game.new_initial_state()
-    for _ in range(2):  # One full deal, then one redeal, both fully passed.
-      _deal_hands(state)
-      for _ in range(8):  # 4 passes in round 1, 4 in round 2.
-        state.apply_action(belote.PASS_ACTION)
 
     self.assertTrue(state.is_terminal())
     self.assertEqual(state.returns(), [0.0] * 4)
+    self.assertIsNone(state.bidding_round())
+
+  def test_invalid_parameters_are_rejected(self):
+    """The dealer must be a seat."""
+    for params in ({"dealer": -1}, {"dealer": 4}):
+      with self.assertRaises(ValueError, msg=str(params)):
+        belote.BeloteGame(params)
 
   def test_bid_rounds_are_distinguishable_information_states(self):
     """A player's round-1 and round-2 decisions must be different
@@ -228,18 +222,6 @@ class BeloteTest(absltest.TestCase):
         observer.dict["bid1_passes"],
         [1.0 if p == passer else 0.0 for p in range(4)])
     np.testing.assert_array_equal(observer.dict["bid_round"], [1.0, 0.0, 0.0])
-
-  def test_redeal_clears_the_auction_record(self):
-    """A redeal deals brand-new hands, so the previous auction's passes say
-    nothing about them and must not carry over."""
-    game = belote.BeloteGame()
-    state = game.new_initial_state()
-    _deal_hands(state)
-    for _ in range(8):  # 4 passes in round 1, 4 in round 2 -> redeal.
-      state.apply_action(belote.PASS_ACTION)
-
-    self.assertEqual(state._bid1_passes, [])
-    self.assertEqual(state._bid2_passes, [])
 
   def test_must_follow_suit(self):
     """A player holding the led suit must play a card of that suit."""
@@ -656,6 +638,64 @@ class BeloteTest(absltest.TestCase):
     for _ in range(200):
       clone = state.resample_from_infostate(0, sampler)
       self.assertIn(5, clone.hands[1])
+
+  def test_belote_is_announced_to_every_player_with_the_first_card(self):
+    """There is no announcement action: the holder is announced to the whole
+    table the moment they play the first of K+Q of trump, and not before."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    state._phase = "play"
+    state._trump_suit = 0  # Clubs.
+    state._dealer = 0
+    state.hands[1] = [6, 5, 10]  # King and Queen of Clubs, plus one more.
+    state.hands[0] = [1, 2]
+    state.hands[2] = [3, 4]
+    state.hands[3] = [7, 8]
+    state._enter_play_phase()
+    self.assertEqual(state._belote_player, 1)
+
+    for player in range(4):
+      self.assertNotIn("belote:", state.information_state_string(player))
+      self.assertNotIn("belote:", state.observation_string(player))
+
+    state._apply_play_action(6, 1)  # Player 1 plays the King of trump.
+    obs_size = game.observation_tensor_size()
+    announcer_bits = slice(obs_size - 4, obs_size)
+    for player in range(4):
+      self.assertIn(" belote:1 ", state.information_state_string(player))
+      self.assertIn(" belote:1 ", state.observation_string(player))
+      np.testing.assert_array_equal(
+          state.observation_tensor(player)[announcer_bits], [0, 1, 0, 0])
+      np.testing.assert_array_equal(
+          state.information_state_tensor(player)[announcer_bits],
+          [0, 1, 0, 0])
+
+  def test_resample_from_infostate_bars_marriage_card_when_not_announced(self):
+    """A player who plays one of K+Q of trump without announcing belote is
+    publicly known not to hold the other, so no resampled world may give it
+    to them -- that world would have announced belote."""
+    game = belote.BeloteGame()
+    state = game.new_initial_state()
+    state._phase = "play"
+    state._trump_suit = 0  # Clubs.
+    state._dealer = 0
+    state.hands[1] = [6, 10, 11]  # King of Clubs, but not the Queen.
+    state.hands[0] = [1, 2, 12]
+    state.hands[2] = [3, 4, 13]
+    state.hands[3] = [5, 7, 14]  # Queen of Clubs.
+    state._enter_play_phase()
+    self.assertEqual(state._belote_player, -1)
+
+    state._apply_play_action(6, 1)  # Player 1 plays the King of trump.
+    self.assertEqual(state._public_card_bar(), (1, 5))
+
+    sampler = np.random.default_rng(6).random
+    for observer in (0, 2, 3):
+      infostate = state.information_state_string(observer)
+      for _ in range(100):
+        clone = state.resample_from_infostate(observer, sampler)
+        self.assertNotIn(5, clone.hands[1])
+        self.assertEqual(clone.information_state_string(observer), infostate)
 
   def test_resample_from_infostate_preserves_belote_holder_once_both_played(
       self):

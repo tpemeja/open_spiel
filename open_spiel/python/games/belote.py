@@ -19,12 +19,11 @@ Classic (non-contract) French Belote for 4 players in 2 fixed partnerships
 (players 0 & 2 vs players 1 & 3). Trump is chosen via the "prise" procedure:
 5 cards are dealt to each player, the next card of the stock is turned face
 up, and players in turn may take it (round 1) or, if everyone passes, choose
-one of the three other suits (round 2). If everyone passes twice, the deal is
-redealt with the next player as dealer. This can in principle repeat
-indefinitely, so the number of redeals is capped by the "max_redeals" game
-parameter (default 10); if every deal keeps failing to produce a taker all
-the way up to that cap, the game ends there as a flat draw (all returns 0)
-rather than redealing forever. Card play follows standard suit- and
+one of the three other suits (round 2). If everyone passes twice, the game
+ends as a draw (all returns 0): real belote would throw the cards in and
+redeal, but a state here is a single deal, and a thrown-in deal scores
+nothing -- the same choice as bridge's passed out hand and euchre without
+"stick the dealer". Card play follows standard suit- and
 trump-following obligations, and scoring uses the standard 162-point deck
 (152 card points + 10 for the last trick), with an all-or-nothing rule: the
 declaring team keeps its trick points only if it scores strictly more than the
@@ -39,9 +38,12 @@ single player holding both the King and Queen of the trump suit) is always
 applied. Per official rules, this bonus actually requires the holder to
 announce "belote" then "rebelote" when playing the first and second of those
 two cards respectively, and is forfeited if either announcement is omitted;
-this implementation simplifies that away and always grants it to whichever
-team holds the marriage, with no announcement action in the game. The 20
-points themselves, and the way they're used, do follow official rules: they
+this implementation simplifies that away: there is no announcement action,
+and the holder is instead announced automatically, to every player, the
+moment they play the first of the two cards (the "belote" field of the
+observations). Conversely, a player who plays one of the two without an
+announcement is publicly known not to hold the other. The 20 points
+themselves, and the way they're used, do follow official rules: they
 count toward the declaring team's contract threshold (its own or the
 defenders') and are always credited to the holder's team, win or lose.
 
@@ -62,10 +64,6 @@ _LAST_TRICK_BONUS = 10
 _CAPOT_LAST_TRICK_BONUS = 100
 _MAX_SCORE_CAPOT = _MAX_SCORE - _LAST_TRICK_BONUS + _CAPOT_LAST_TRICK_BONUS
 _BELOTE_REBELOTE_BONUS = 20
-# Safety valve: real belote redeals with no limit if bidding keeps failing,
-# but that can never terminate in principle, so redeals are capped and the
-# deal ends as a flat draw if the cap is ever exceeded.
-_DEFAULT_MAX_REDEALS = 10
 
 _SUIT_NAMES = ["C", "D", "H", "S"]
 _RANK_NAMES = ["7", "8", "9", "10", "J", "Q", "K", "A"]
@@ -121,32 +119,24 @@ _GAME_TYPE = pyspiel.GameType(
     provides_observation_tensor=True,
     parameter_specification={
         "dealer": 0,
-        "max_redeals": _DEFAULT_MAX_REDEALS,
     },
 )
 
 
-def _make_game_info(max_redeals) -> pyspiel.GameInfo:
-  """Creates GameInfo for the given `max_redeals` cap."""
-  return pyspiel.GameInfo(
-      # Card plays (0..31) + pass + take + 4 choose-suit actions.
-      num_distinct_actions=_NUM_CARDS + 2 + _NUM_SUITS,
-      max_chance_outcomes=_NUM_CARDS,
-      num_players=_NUM_PLAYERS,
-      # Loose bounds that also cover a capot (252 instead of 162) and the
-      # belote/rebelote bonus.
-      min_utility=-float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
-      max_utility=float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
-      utility_sum=0.0,
-      # Each deal attempt is dealing (~32 draws) + bidding (up to 8 calls);
-      # this can repeat up to max_redeals+1 times before the redeal cap
-      # forces a flat draw, followed by card play (32 plays) if a deal
-      # succeeds.
-      max_game_length=(max_redeals + 1) * (_NUM_CARDS + 8) + _NUM_CARDS,
-  )
-
-
-_GAME_INFO = _make_game_info(_DEFAULT_MAX_REDEALS)
+_GAME_INFO = pyspiel.GameInfo(
+    # Card plays (0..31) + pass + take + 4 choose-suit actions.
+    num_distinct_actions=_NUM_CARDS + 2 + _NUM_SUITS,
+    max_chance_outcomes=_NUM_CARDS,
+    num_players=_NUM_PLAYERS,
+    # Loose bounds that also cover a capot (252 instead of 162) and the
+    # belote/rebelote bonus.
+    min_utility=-float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
+    max_utility=float(_MAX_SCORE_CAPOT + _BELOTE_REBELOTE_BONUS),
+    utility_sum=0.0,
+    # Dealing the whole deck (32 draws, when someone takes), up to 8 bids,
+    # then 32 card plays.
+    max_game_length=_NUM_CARDS + 2 * _NUM_PLAYERS + _NUM_CARDS,
+)
 
 
 def card_suit(card) -> int:
@@ -248,11 +238,10 @@ class BeloteGame(pyspiel.Game):
     """A Python version of Belote."""
 
     def __init__(self, params=None) -> None:
-        params = params or {}
-        max_redeals = params.get("max_redeals", _DEFAULT_MAX_REDEALS)
-        super().__init__(_GAME_TYPE, _make_game_info(max_redeals), params)
+        super().__init__(_GAME_TYPE, _GAME_INFO, params or {})
         self.dealer = self.get_parameters().get("dealer", 0)
-        self.max_redeals = max_redeals
+        if not 0 <= self.dealer < _NUM_PLAYERS:
+            raise ValueError(f"dealer must be a seat (0-3), not {self.dealer!r}")
 
     def new_initial_state(self) -> "BeloteState":
         """Returns a state corresponding to the start of a game."""
@@ -290,7 +279,7 @@ class BeloteState(pyspiel.State):
         self._bid_turn_order = _order_from((self._dealer + 1) % _NUM_PLAYERS)
         self._bid_pointer = 0
         # Who has passed, per bidding round. `_bid_pointer` alone can't
-        # answer this: it resets to 0 between rounds and on a redeal, so
+        # answer this: it resets to 0 between rounds, so
         # without these the auction is unrecoverable from the state -- and
         # a bid1 information state was byte-identical to the bid2 one that
         # follows it (same 5 cards, same turned card, no trump yet), which
@@ -300,9 +289,6 @@ class BeloteState(pyspiel.State):
         # evidence about the hands still held.
         self._bid1_passes = []
         self._bid2_passes = []
-
-        self._max_redeals = game.max_redeals
-        self._redeal_count = 0
 
         self._taker = -1
         self._trump_suit = -1
@@ -342,7 +328,7 @@ class BeloteState(pyspiel.State):
         return self._phase
 
     def dealer(self) -> int:
-        """The seat that dealt. Rotates on a redeal."""
+        """The seat that dealt."""
         return self._dealer
 
     def upcard(self) -> int | None:
@@ -372,8 +358,8 @@ class BeloteState(pyspiel.State):
     def bidding_round(self) -> int | None:
         """Which auction round is live, or resolved the contract: 1 or 2.
 
-        None before the auction opens -- during the initial deal, and during
-        the redeal that follows four passes in round 2.
+        None before the auction opens -- during the initial deal -- and after
+        four passes in round 2 end the game.
 
         `current_phase` alone is not enough. It reads "bid2" the instant
         round 2 opens, before anyone in it has acted, and says nothing once
@@ -433,10 +419,11 @@ class BeloteState(pyspiel.State):
         return self._belote_player
 
     def belote_announced(self) -> int:
-        """How many of the two marriage cards have actually been played (0-2).
+        """How many of the two marriage cards the holder has played (0-2).
 
         The rules-facing counterpart to `belote_holder`: 0 means the holding
-        is not yet public knowledge.
+        is not yet public knowledge, and anything above 0 means it has been
+        announced to every player.
         """
         if self._belote_player < 0 or self._trump_suit < 0:
             return 0
@@ -595,6 +582,10 @@ class BeloteState(pyspiel.State):
         return -1
 
 
+    def _announced_belote_player(self) -> int:
+        """The seat that has announced belote, or -1 if nobody has."""
+        return self._belote_player if self.belote_announced() > 0 else -1
+
     def _apply_deal_action(self, card) -> None:
         self._deck.remove(card)
         destination = self._deal_schedule[self._deal_index]
@@ -650,28 +641,10 @@ class BeloteState(pyspiel.State):
             self._bid2_passes.append(player)
             self._bid_pointer += 1
             if self._bid_pointer == _NUM_PLAYERS:
-                if self._redeal_count >= self._max_redeals:
-                    # Redeal cap reached: rather than redealing forever, end
-                    # the game here as a flat draw.
-                    self._phase = "done"
-                    self._returns = [0.0] * _NUM_PLAYERS
-                    return
-                # Everyone passed twice: reshuffle and redeal, dealer rotates.
-                self._redeal_count += 1
-                self._dealer = (self._dealer + 1) % _NUM_PLAYERS
-                self.hands = [[] for _ in range(_NUM_PLAYERS)]
-                self._turned_card = None
-                self._deck = list(range(_NUM_CARDS))
-                self._bid_turn_order = _order_from((self._dealer + 1) % _NUM_PLAYERS)
-                self._bid_pointer = 0
-                # A redeal starts a brand-new auction on brand-new hands:
-                # the previous one's passes say nothing about these cards.
-                self._bid1_passes = []
-                self._bid2_passes = []
-                self._deal_schedule = _initial_deal_schedule(self._dealer)
-                self._deal_index = 0
-                self._after_deal_phase = "bid1"
-                self._phase = "deal"
+                # Everyone passed twice: the deal is thrown in and scores
+                # nothing.
+                self._phase = "done"
+                self._returns = [0.0] * _NUM_PLAYERS
         else:
             suit = action - CHOOSE_SUIT_ACTION_BASE
             self._taker = player
@@ -899,17 +872,41 @@ class BeloteState(pyspiel.State):
 
         return pins
 
+    def _public_card_bar(self) -> tuple[int, int] | None:
+        """The counterpart to the belote pin: once exactly one of K+Q of trump
+        has been played, by a player who did not announce belote, that player
+        is publicly known not to hold the other. Returns (player, card), or
+        None when nothing is known."""
+        # With a holder, a lone played marriage card was theirs, and announced.
+        if self._trump_suit < 0 or self._belote_player >= 0:
+            return None
+        trump_king, trump_queen = self._trump_king_and_queen()
+        king_played = trump_king in self._played_cards
+        queen_played = trump_queen in self._played_cards
+        if king_played == queen_played:
+            return None
+        played = trump_king if king_played else trump_queen
+        for trick in self._reconstruct_tricks():
+            for player, card in trick:
+                if card == played:
+                    return player, trump_queen if king_played else trump_king
+        raise AssertionError("A played card is missing from the tricks.")
+
     def _resample_unseen_cards(
         self, unseen_cards, other_players, hand_sizes, sampler, tricks
     ) -> dict[int, list[int]]:
         """Partitions `unseen_cards` among `other_players` (matching
         `hand_sizes`), respecting the void/trump-strength constraints from
-        `_infer_void_and_trump_bounds`. See `_bipartite_assign` for why this
-        is always satisfiable."""
+        `_infer_void_and_trump_bounds` and the card barred by
+        `_public_card_bar`. See `_bipartite_assign` for why this is always
+        satisfiable."""
         void_suits, max_trump_strength = self._infer_void_and_trump_bounds(tricks)
         trump = self._trump_suit
+        bar = self._public_card_bar()
 
         def allowed(p, c):
+            if bar == (p, c):
+                return False
             suit = card_suit(c)
             bound = max_trump_strength[p]
             return suit not in void_suits[p] and not (
@@ -1015,6 +1012,9 @@ class BeloteObserver:
             )
             pieces.append(("cards_played", _NUM_CARDS, (_NUM_CARDS,)))
             pieces.append(("team_points", 2, (2,)))
+            # Who announced belote, if anyone has. Public the moment the
+            # holder plays the first of K+Q of trump, and stays so.
+            pieces.append(("belote_announcer", _NUM_PLAYERS, (_NUM_PLAYERS,)))
             if iig_obs_type.perfect_recall:
                 # Who passed, per round, indexed by absolute player id.
                 # History rather than present state, hence perfect-recall
@@ -1096,6 +1096,10 @@ class BeloteObserver:
             self.dict["team_points"][1] = state._team_points[1] / float(
                 _MAX_SCORE_CAPOT
             )
+        if "belote_announcer" in self.dict:
+            announcer = state._announced_belote_player()
+            if announcer >= 0:
+                self.dict["belote_announcer"][announcer] = 1
 
     def string_from(self, state, player) -> str:
         """Observation of `state` from the PoV of `player`, as a string."""
@@ -1114,6 +1118,10 @@ class BeloteObserver:
             pieces.append(f"trump:{_SUIT_NAMES[state._trump_suit]}")
         if "declarer" in self.dict and state._taker >= 0:
             pieces.append(f"declarer:{state._taker}")
+        if "belote_announcer" in self.dict:
+            announcer = state._announced_belote_player()
+            if announcer >= 0:
+                pieces.append(f"belote:{announcer}")
         if "bid_round" in self.dict and state._phase in ("bid1", "bid2"):
             pieces.append(f"bidround:{state._phase[-1]}")
         if "bid1_passes" in self.dict and state._bid1_passes:
