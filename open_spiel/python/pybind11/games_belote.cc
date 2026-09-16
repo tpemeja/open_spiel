@@ -51,27 +51,36 @@ void init_pyspiel_games_belote(py::module& m) {
   belote.attr("CAPOT_LAST_TRICK_BONUS") =
       py::int_(belote::kCapotLastTrickBonus);
 
+  py::enum_<belote::Phase>(belote, "Phase")
+      .value("DEAL", belote::Phase::kDeal)
+      .value("BID1", belote::Phase::kBid1)
+      .value("BID2", belote::Phase::kBid2)
+      .value("PLAY", belote::Phase::kPlay)
+      .value("GAME_OVER", belote::Phase::kGameOver)
+      .export_values();
+
+  py::enum_<belote::BeloteSide>(belote, "BeloteSide")
+      .value("NONE", belote::BeloteSide::kNone)
+      .value("DECLARERS", belote::BeloteSide::kDeclarers)
+      .value("DEFENDERS", belote::BeloteSide::kDefenders)
+      .export_values();
+
   belote.def("card_string", belote::CardString);
   belote.def("card_suit", belote::CardSuit);
   belote.def("card_rank", belote::CardRank);
-  belote.def("card_rank_name", belote::CardRankName);
   belote.def("card_points", belote::CardPoints);
   belote.def("card_strength", belote::CardStrength);
   belote.def("team_of", belote::TeamOf);
   belote.def("partner_of", belote::PartnerOf);
-  // A free function, not a state accessor: it depends only on two cards, the
-  // led suit and trump, so a strategy can weigh a hypothetical trick with no
-  // state to hang the call on. Matches `belote.beats` in the Python game.
+  // Free functions, not state accessors: they depend only on their arguments,
+  // so a strategy can weigh a hypothetical trick or contract with no state to
+  // hang the call on.
   belote.def("beats", belote::Beats);
+  belote.def("score_deal", belote::ScoreDeal);
 
   py::classh<BeloteState, State> state_class(belote, "BeloteState");
   state_class
-      // The phase is bound as the Python game's string ("deal", "bid1",
-      // "bid2", "play", "done") rather than as an enum. Euchre binds an enum
-      // because it has no Python twin to agree with; this game does, and an
-      // agent comparing `state.current_phase() == "bid1"` has to keep working
-      // when it is pointed at this implementation instead.
-      .def("current_phase", &BeloteState::PhaseString)
+      .def("current_phase", &BeloteState::CurrentPhase)
       .def("dealer", &BeloteState::Dealer)
       .def("upcard", &BeloteState::Upcard)
       .def("taker", &BeloteState::Taker)
@@ -87,16 +96,11 @@ void init_pyspiel_games_belote(py::module& m) {
       .def("belote_announced", &BeloteState::BeloteAnnounced)
       .def("tricks", &BeloteState::Tricks)
       .def("trump_marriage", &BeloteState::TrumpMarriage)
-      // `hands` is a plain attribute on the Python state, so it is bound as
-      // a property here rather than as a method, to read the same way.
-      // Reading agrees; writing does not. The Python attribute is the live
-      // list (its own resampling assigns into it), whereas this hands back a
-      // copy, so `state.hands[0].append(card)` changes nothing here. Nothing
-      // outside the game should be writing hands regardless.
-      .def_property_readonly("hands", &BeloteState::PlayerHands)
-      // Returns (void_suits, max_trump_strength) in the same shape the Python
-      // game returns: a dict of seat -> set of suits, and a dict of seat ->
-      // bound or None. VoidAndTrumpBounds spells "no bound" as -1.
+      // Returns a copy, so mutating the result does not change the state.
+      .def("hands", &BeloteState::PlayerHands)
+      // Returns (void_suits, max_trump_strength): a dict of seat -> set of
+      // suits, and a dict of seat -> bound or None (VoidAndTrumpBounds
+      // spells "no bound" as -1).
       .def("public_inference",
            [](const BeloteState& state) {
              belote::VoidAndTrumpBounds bounds = state.PublicInference();

@@ -11,13 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for the game-specific functions for belote."""
 
+import pickle
 
 from absl.testing import absltest
 
 import pyspiel
+
 belote = pyspiel.belote
 
 
@@ -38,7 +39,7 @@ class GamesBeloteTest(absltest.TestCase):
 
     game = pyspiel.load_game('belote')
     state = game.new_initial_state()
-    self.assertEqual(state.current_phase(), 'deal')
+    self.assertEqual(state.current_phase(), belote.Phase.DEAL)
     self.assertEqual(state.dealer(), 0)
     self.assertIsNone(state.upcard())
     self.assertEqual(state.taker(), -1)
@@ -55,10 +56,10 @@ class GamesBeloteTest(absltest.TestCase):
     self.assertEqual(state.belote_announced(), 0)
     self.assertEqual(state.tricks(), [])
     self.assertIsNone(state.trump_marriage())
-    self.assertEqual(state.hands, [[], [], [], []])
-    self.assertEqual(state.public_inference(),
-                     ({0: set(), 1: set(), 2: set(), 3: set()},
-                      {0: None, 1: None, 2: None, 3: None}))
+    self.assertEqual(state.hands(), [[], [], [], []])
+    no_voids = {p: set() for p in range(4)}
+    no_bounds = {p: None for p in range(4)}
+    self.assertEqual(state.public_inference(), (no_voids, no_bounds))
 
     self.assertEqual(belote.card_suit(8), 1)
     self.assertEqual(belote.card_rank(8), 0)
@@ -74,8 +75,9 @@ class GamesBeloteTest(absltest.TestCase):
     self.assertFalse(belote.beats(ace_of_diamonds, seven_of_clubs, 1, 0))
     # Within trump, belote ranks the Jack top, above the Ace.
     jack_of_clubs, ace_of_clubs = 4, 7
-    self.assertGreater(belote.card_strength(jack_of_clubs, 0),
-                       belote.card_strength(ace_of_clubs, 0))
+    self.assertGreater(
+        belote.card_strength(jack_of_clubs, 0),
+        belote.card_strength(ace_of_clubs, 0))
     self.assertTrue(belote.beats(jack_of_clubs, ace_of_clubs, 0, 0))
 
   def test_accessors_track_a_played_deal(self):
@@ -83,7 +85,7 @@ class GamesBeloteTest(absltest.TestCase):
     state = pyspiel.load_game('belote').new_initial_state()
     while state.is_chance_node():
       state.apply_action(state.legal_actions()[0])
-    self.assertEqual(state.current_phase(), 'bid1')
+    self.assertEqual(state.current_phase(), belote.Phase.BID1)
     self.assertEqual(state.bidding_round(), 1)
     self.assertIsNotNone(state.upcard())
 
@@ -101,13 +103,53 @@ class GamesBeloteTest(absltest.TestCase):
 
     while state.is_chance_node():
       state.apply_action(state.legal_actions()[0])
-    self.assertEqual(state.current_phase(), 'play')
-    self.assertEqual([len(hand) for hand in state.hands], [8, 8, 8, 8])
+    self.assertEqual(state.current_phase(), belote.Phase.PLAY)
+    self.assertEqual([len(hand) for hand in state.hands()], [8, 8, 8, 8])
 
     state.apply_action(state.legal_actions()[0])
     self.assertLen(state.current_trick(), 1)
     self.assertLen(state.played_cards(), 1)
     self.assertLen(state.tricks(), 1)
+
+  def test_pickle_round_trip(self):
+    """The state and game pickle bindings must survive a round trip."""
+    state = pyspiel.load_game('belote').new_initial_state()
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    state.apply_action(belote.TAKE_ACTION)
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    state.apply_action(state.legal_actions()[0])
+
+    unpickled = pickle.loads(pickle.dumps(state))
+    self.assertEqual(str(unpickled), str(state))
+    self.assertEqual(unpickled.history(), state.history())
+    self.assertEqual(unpickled.hands(), state.hands())
+    self.assertEqual(unpickled.trump_suit(), state.trump_suit())
+    self.assertEqual(unpickled.taker(), state.taker())
+
+  def test_cloned_state_matches_original(self):
+    state = pyspiel.load_game('belote').new_initial_state()
+    while state.is_chance_node():
+      state.apply_action(state.legal_actions()[0])
+    clone = state.clone()
+    self.assertEqual(str(clone), str(state))
+    self.assertEqual(clone.history(), state.history())
+    self.assertEqual(clone.hands(), state.hands())
+
+  def test_score_deal_binding(self):
+    """The scoring rule is bound as a free function, like beats()."""
+    # Made contract: each side keeps what it took.
+    self.assertEqual(
+        belote.score_deal(91, 71, belote.BeloteSide.NONE), (91, 71))
+    # A tie fails the contract, so the defenders collect all 162.
+    self.assertEqual(
+        belote.score_deal(81, 81, belote.BeloteSide.NONE), (0, 162))
+    # The 20-point bonus counts toward the threshold and can flip a deal.
+    self.assertEqual(
+        belote.score_deal(75, 87, belote.BeloteSide.DECLARERS), (95, 87))
+    self.assertEqual(
+        belote.score_deal(85, 77, belote.BeloteSide.DEFENDERS), (0, 182))
 
   def test_invalid_parameters_are_rejected(self):
     for params in ('dealer=-1', 'dealer=4'):

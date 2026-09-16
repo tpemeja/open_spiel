@@ -15,43 +15,51 @@
 #ifndef OPEN_SPIEL_GAMES_BELOTE_H_
 #define OPEN_SPIEL_GAMES_BELOTE_H_
 
-// C++ implementation of classic (non-contract) French Belote for 4 players
-// in 2 fixed partnerships (players 0 & 2 vs players 1 & 3). Trump is chosen
-// via the "prise" procedure: 5 cards are dealt to each player, the next
-// stock card is turned face up, and players in turn may take it (round 1)
-// or, if everyone passes, choose one of the three other suits (round 2). If
-// everyone passes twice, the game ends as a draw (all returns 0): real belote
-// would throw the cards in and redeal, but a state here is a single deal,
-// and a thrown-in deal scores nothing -- the same choice as bridge's passed
-// out hand and euchre without "stick the dealer". Card play follows standard
-// suit- and trump-following obligations, and scoring uses the standard
-// 162-point deck (152 card points + 10 for the last trick), with an
-// all-or-nothing rule: the declaring team keeps its trick points only if it
-// scores strictly more than the defenders; otherwise the defending team
-// collects all trick points. If one team wins all 8 tricks ("capot"), the
-// last-trick bonus is 100 instead of 10, so the deck is worth 252 points
-// instead of 162, and that full total goes to whichever team scores higher
-// (the capot-winning team on success, or the defenders' 252 on a failed
-// contract).
+// Classic (non-contract) French Belote: 4 players in two fixed partnerships
+// (0 & 2 vs 1 & 3), a 32-card deck, 8 tricks.
 //
-// The "belote/rebelote" bonus (20 extra points awarded to whichever team has
-// a single player holding both the King and Queen of the trump suit) is
-// always applied. Per official rules, this bonus actually requires the
-// holder to announce "belote" then "rebelote" when playing the first and
-// second of those two cards respectively, and is forfeited if either
-// announcement is omitted; this implementation simplifies that away: there
-// is no announcement action, and the holder is instead announced
-// automatically, to every player, the moment they play the first of the two
-// cards (the "belote" field of the observations). Conversely, a player who
-// plays one of the two without an announcement is publicly known not to
-// hold the other. The 20 points themselves, and the way they're used, do
-// follow official rules: they count toward the declaring team's contract
-// threshold (its own or the defenders') and are always credited to the
-// holder's team, win or lose.
+// https://en.wikipedia.org/wiki/Belote
+// https://www.pagat.com/jass/belote.html
+// https://www.ffbelote.org/regles-officielle-belote/
+//
+// Trump is chosen by the "prise": 5 cards are dealt to each player and the
+// next stock card is turned face up. Players in turn may take it, making its
+// suit trump (round 1); if all four pass, they may instead name one of the
+// other three suits (round 2). The taker adds the turned card to their hand
+// and the deal is completed to 8 cards each.
+//
+// Scoring uses the 162-point deck (152 in cards plus 10 for the last trick).
+// The declaring team keeps its trick points only if it scores strictly more
+// than the defenders; otherwise the defenders collect all trick points. A
+// capot (one team wins all 8 tricks) raises the last-trick bonus to 100, so
+// the deck is worth 252.
+//
+// Following a trick: you must follow suit; if void you must trump, unless
+// your partner is already winning the trick; and whenever you play a trump
+// you must beat the highest trump in the trick if you can. A player who is
+// void and cannot overtrump must still play a trump even when holding a
+// discard -- pagat states this explicitly ("he must still play a trump,
+// although he does not benefit from doing so"), though some casual rule sets
+// let the player discard instead.
+//
+// Two deliberate departures from the official rules:
+//
+//   * Four passes in round 2 end the deal as a draw (all returns 0) instead
+//     of triggering a redeal, since a state here is a single deal. Same
+//     choice as bridge's passed out hand.
+//   * The belote/rebelote bonus (20 points to the team of a player holding
+//     both the King and Queen of trump) is always awarded. There is no
+//     announcement action: the holder is announced to every player
+//     automatically when they play the first of the two cards, so a player
+//     who plays one of them without an announcement is publicly known not
+//     to hold the other. The 20 points follow the official rules -- they
+//     count toward whichever team's contract threshold applies and are
+//     credited to the holder's team win or lose.
 
 #include <array>
 #include <functional>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -74,55 +82,66 @@ inline constexpr int kCapotLastTrickBonus = 100;
 inline constexpr int kMaxScoreCapot =
     kMaxScore - kLastTrickBonus + kCapotLastTrickBonus;
 inline constexpr int kBeloteRebeloteBonus = 20;
+inline constexpr int kNumTricks = kNumCards / kNumPlayers;
 // Longest possible deal_schedule_: the initial deal (3+2 cards to each of 4
 // players, plus the turned card).
 inline constexpr int kMaxDealScheduleSize = kNumPlayers * 5 + 1;
-inline constexpr int kNumTricks = kNumCards / kNumPlayers;
 
 // Card actions are 0..31 (card = suit * kNumRanks + rank).
-inline constexpr int kPassAction = kNumCards;               // 32
-inline constexpr int kTakeAction = kNumCards + 1;            // 33
-inline constexpr int kChooseSuitActionBase = kNumCards + 2;  // 34..37
+inline constexpr int kPassAction = kNumCards;                         // 32
+inline constexpr int kTakeAction = kNumCards + 1;                     // 33
+inline constexpr int kChooseSuitActionBase = kNumCards + 2;           // 34..37
 inline constexpr int kNumDistinctActions = kNumCards + 2 + kNumSuits;  // 38
 
 constexpr char kSuitChar[] = "CDHS";
 // Ranks, low to high face value: 7 8 9 10 J Q K A.
 constexpr const char* kRankNames[] = {"7", "8", "9", "10",
                                       "J", "Q", "K", "A"};
+// Rank indices of the two cards making up the belote/rebelote marriage.
+inline constexpr int kQueenRank = 5;
+inline constexpr int kKingRank = 6;
 
 enum class Phase { kDeal, kBid1, kBid2, kPlay, kGameOver };
+std::ostream& operator<<(std::ostream& os, const Phase& phase);
 
 inline int CardSuit(int card) { return card / kNumRanks; }
 inline int CardRank(int card) { return card % kNumRanks; }
-// The rank name of `card`, e.g. "10", without its suit.
-inline std::string CardRankName(int card) { return kRankNames[CardRank(card)]; }
 std::string CardString(int card);
 int CardPoints(int card, int trump_suit);
 int CardStrength(int card, int trump_suit);
-// Whether `card` beats `other` within the same trick. Depends only on the
-// two cards, the led suit and the trump suit -- not on anything else about
-// the deal -- so it is a free function rather than a member, letting a
-// strategy weigh a hypothetical trick with no state to hang the call on.
+// Whether `card` beats `other` within the same trick. Depends only on the two
+// cards, the led suit and the trump suit, so a strategy can weigh a
+// hypothetical trick without a state to hang the call on.
 bool Beats(int card, int other, int led_suit, int trump_suit);
+
+// Which side, if either, holds the belote/rebelote marriage.
+enum class BeloteSide { kNone, kDeclarers, kDefenders };
+
+// Final totals for (declaring team, defending team) given their raw trick
+// points, applying the all-or-nothing rule and the 20-point belote/rebelote
+// bonus. Like Beats, this depends only on its arguments, so a strategy can
+// ask "do we still make the contract if we lose this trick?" with no state
+// to hang the call on.
+std::pair<int, int> ScoreDeal(int declarer_points, int defender_points,
+                              BeloteSide belote_side);
 inline int TeamOf(Player player) { return player % 2; }
 inline Player PartnerOf(Player player) { return (player + 2) % kNumPlayers; }
 
 // A trick in progress or completed, as (player, card) pairs in play order.
-// Always at most kNumPlayers entries, so this never allocates on the heap.
 using Trick = absl::InlinedVector<std::pair<Player, int>, kNumPlayers>;
 // A run of tricks (e.g. every trick played so far, current one included).
-// Always at most kNumTricks + 1 entries, so this never allocates either.
 using TrickList = absl::InlinedVector<Trick, kNumTricks + 1>;
-// One hand of cards per player, indexed by absolute player id. Always at
-// most kNumRanks cards, so this never allocates on the heap.
-using Hands = std::array<absl::InlinedVector<int, kNumRanks>, kNumPlayers>;
-// A deal schedule (which player, or kInvalidPlayer for "turn face up", gets
-// each successive card). Always at most kMaxDealScheduleSize entries.
+// Cards held by one player, or any other bounded set of cards from a hand.
+using CardList = absl::InlinedVector<int, kNumRanks>;
+// One hand of cards per player, indexed by absolute player id.
+using Hands = std::array<CardList, kNumPlayers>;
+// Which player, or kInvalidPlayer for "turn face up", gets each successive
+// card of a deal.
 using DealSchedule = absl::InlinedVector<Player, kMaxDealScheduleSize>;
 
 // Void suits and trump-strength upper bounds inferred per player from public
 // play, used to constrain opponent hand resampling. `max_trump_strength[p]`
-// of -1 means no known bound (any trump strength allowed).
+// of -1 means no known bound.
 struct VoidAndTrumpBounds {
   std::array<std::array<bool, kNumSuits>, kNumPlayers> void_suits{};
   std::array<int, kNumPlayers> max_trump_strength = {-1, -1, -1, -1};
@@ -152,85 +171,37 @@ class BeloteState : public State {
   std::unique_ptr<State> ResampleFromInfostate(
       int player_id, std::function<double()> rng) const override;
 
-  // ---- public read-only view of the state --------------------------------
-  //
-  // What an agent needs in order to decide anything: the trump suit, whose
-  // contract it is, what is on the table and what has already been played.
-  // Exposed here rather than left for callers to reach into the private
-  // members. The bindings are in games_belote.cc.
-  //
-  // These return by value, as EuchreState's accessors do. The containers are
-  // bounded (at most 32 cards, 8 tricks), so a copy is cheap, and it keeps a
-  // caller from holding a reference into a state it may outlive.
-
   Phase CurrentPhase() const { return phase_; }
-  // The phase as a stable name -- "deal", "bid1", "bid2", "play", "done" --
-  // for callers that want to test it without depending on the enum's
-  // numbering. This is what the bindings expose as current_phase().
-  std::string PhaseString() const;
   Player Dealer() const { return dealer_; }
-  // The card turned face up for round 1, or absl::nullopt before the deal.
-  // Stays set once the auction resolves: every player saw it, and it ends up
-  // in the taker's hand.
+  // The card turned face up for round 1. Stays set once the auction resolves.
   absl::optional<int> Upcard() const;
-  // The seat holding the contract, or -1 if the auction is unresolved.
-  // Belote calls this seat the taker; euchre calls it declarer.
-  //
-  // Reports -1 rather than the kInvalidPlayer (-3) the member holds, so that
-  // an absent seat is spelled the way every other accessor here spells an
-  // absent seat, suit or team. A caller testing `>= 0` sees no difference;
-  // one testing `== -1` would.
+  // The seat holding the contract, or -1. Euchre calls this the declarer.
   Player Taker() const { return taker_ >= 0 ? taker_ : -1; }
   int DeclarerTeam() const { return declarer_team_; }
   int TrumpSuit() const { return trump_suit_; }
-  // Which auction round is live, or resolved the contract: 1 or 2, and
-  // absl::nullopt before the auction opens (during the initial deal), and
-  // after four passes in round 2 end the game. CurrentPhase()
-  // alone cannot answer this: it reads kBid2 the instant round 2 opens,
-  // before anyone in it has acted, and says nothing once the auction is
-  // over -- but round 1 having four passes is durable.
+  // 1 or 2, or absl::nullopt outside the auction. Unlike CurrentPhase(), this
+  // still reports the round that resolved the contract.
   absl::optional<int> BiddingRound() const;
-  // Seats that passed in `round_number` (1 or 2), in turn order. Only passes
-  // are recorded: a take or a suit call ends the auction, so that seat is
-  // never "passed" -- it is Taker().
+  // Seats that passed in `round_number` (1 or 2), in turn order.
   std::vector<Player> BidPasses(int round_number) const;
-  // (player, card) pairs played so far in the trick in progress.
   std::vector<std::pair<Player, int>> CurrentTrick() const;
-  // The winning seat of each completed trick, in order.
   std::vector<Player> TrickWinners() const;
   std::vector<int> PlayedCards() const;
-  // Trick points per team. Includes the last-trick bonus, folded in the
-  // instant the eighth trick completes. Excludes the belote bonus, which is
-  // applied at scoring.
+  // Includes the last-trick bonus, excludes the belote bonus.
   std::vector<int> TeamPoints() const;
   std::vector<std::vector<int>> PlayerHands() const;
-  // The seat holding trump King AND Queen, or kInvalidPlayer. Set in
-  // EnterPlayPhase from the real hands, before a card is played: bookkeeping
-  // computed when the fact becomes true, not when an opponent could learn
-  // it. Under the rules the pair is announced by playing the first of the
-  // two cards, so anything shown to a player who is not the holder must gate
-  // on BeloteAnnounced().
-  // Reports -1 when there is no holder, matching Taker().
+  // The seat holding both trump King and Queen, or -1. Private until
+  // BeloteAnnounced() is non-zero.
   Player BeloteHolder() const {
     return belote_holder_ >= 0 ? belote_holder_ : -1;
   }
-  // How many of the two marriage cards the holder has actually played (0-2).
-  // The rules-facing counterpart to BeloteHolder(): 0 means the holding is
-  // not yet public knowledge, and anything above 0 means it has been
-  // announced to every player.
+  // How many of the two marriage cards the holder has played (0-2).
   int BeloteAnnounced() const;
-  // Every trick as (player, card) pairs in play order, the trick in progress
-  // included.
+  // Every trick as (player, card) pairs, including the one in progress.
   std::vector<std::vector<std::pair<Player, int>>> Tricks() const;
-  // The King and Queen of the trump suit, or absl::nullopt before there is a
-  // trump suit -- the card ids computed from a trump of -1 are negative
-  // nonsense rather than an error.
   absl::optional<std::pair<int, int>> TrumpMarriage() const;
-  // What the public history proves about the other hands: the suits each
-  // seat is known void in, and an upper bound on the trump strength each is
-  // known to hold. This is what ResampleFromInfostate uses to keep a sampled
-  // world consistent; exposed so a caller sampling or featurising can
-  // respect the same constraints instead of re-deriving them.
+  // What the public history proves about the other hands, as used by
+  // ResampleFromInfostate.
   VoidAndTrumpBounds PublicInference() const;
 
  protected:
@@ -239,15 +210,13 @@ class BeloteState : public State {
  private:
   std::vector<Action> LegalCardPlays(Player player) const;
   bool IsBetter(int card, int other, int led_suit) const;
-  // The (K, Q) card ids of the current trump suit. Only meaningful once a
-  // trump suit exists; TrumpMarriage() is the guarded public form.
+  // Only meaningful once a trump suit exists; TrumpMarriage() guards it.
   std::pair<int, int> TrumpKingAndQueen() const;
   Player TrickWinner(const Trick& trick) const;
   void EnterPlayPhase();
-  // Returns the player publicly known -- via `hands`, or having already
-  // played the card(s) in `tricks` -- to hold (or have held) both the King
-  // and Queen of trump, or kInvalidPlayer. The no-argument overload checks
-  // the current hands and play history.
+  // The player holding, or already seen to have played, both the King and
+  // Queen of trump, or kInvalidPlayer. Played cards count, because who
+  // played what holds across resampled worlds.
   Player FindBeloteHolder(const Hands& hands, const TrickList& tricks) const;
   Player FindBeloteHolder() const;
   void ApplyDealAction(int card);
@@ -259,39 +228,30 @@ class BeloteState : public State {
   void FinalizeScores();
   void WriteObservation(Player player, bool perfect_recall,
                         absl::Span<float> values) const;
-  // Backs both InformationStateString and ObservationString. The pieces that
-  // are history rather than present state are gated on `perfect_recall` --
-  // the same split WriteObservation makes for the tensors.
-  std::string ObservationStringImpl(Player player,
-                                    bool perfect_recall) const;
-  // Rebuilds the completed tricks (not including the current partial trick),
-  // as (player, card) pairs in play order. Trick 0 is led by the player
-  // after the dealer; trick i>0 is led by the winner of trick i-1.
+  // Backs both InformationStateString and ObservationString; `perfect_recall`
+  // gates the history, as in WriteObservation.
+  std::string ObservationStringImpl(Player player, bool perfect_recall) const;
+  // Trick 0 is led by the player after the dealer; trick i>0 by the winner
+  // of trick i-1.
   TrickList ReconstructCompletedTricks() const;
   // As above, plus the current partial trick (if any) appended at the end.
   TrickList ReconstructTricks() const;
-  // Infers void suits and trump-strength upper bounds per player from
-  // `tricks`, for constraining opponent hand resampling.
   VoidAndTrumpBounds InferVoidAndTrumpBounds(const TrickList& tricks) const;
-  // Cards whose holder is public knowledge beyond `player_id`'s own hand:
-  // the turned card (pinned to the taker) and, once exactly one of the
-  // trump King/Queen has been publicly played, the other (pinned to the
-  // belote holder). At most 2 cards can ever be pinned to one player.
+  // Cards whose holder is public knowledge: the turned card (the taker's)
+  // and, once one of the trump King/Queen is played, the other.
   std::array<absl::InlinedVector<int, 2>, kNumPlayers> PublicCardPins(
       Player player_id) const;
   // The seat that has announced belote, or kInvalidPlayer if nobody has.
   Player AnnouncedBeloteHolder() const;
-  // The counterpart to the belote pin: once exactly one of the trump King and
-  // Queen has been played, by a seat that did not announce belote, that seat
-  // is publicly known not to hold the other. Returns (seat, card), or
-  // (kInvalidPlayer, -1) when nothing is known.
+  // The counterpart to the belote pin: a seat that played one marriage card
+  // without announcing is known not to hold the other. Returns (seat, card),
+  // or (kInvalidPlayer, -1).
   std::pair<Player, int> PublicCardBar() const;
 
   const Player dealer_;
   Hands hands_{};
-  // Cards still in the stock, tracked as a membership bitmap (rather than a
-  // vector requiring O(n) erase-by-value and repeated sorting) since cards
-  // 0..31 are already in ascending order when scanned in index order.
+  // Cards still in the stock, as a membership bitmap: scanning 0..31 in
+  // index order is already ascending, so nothing needs sorting.
   std::array<bool, kNumCards> in_deck_{};
   int deck_size_ = 0;
   int turned_card_ = kInvalidAction;
@@ -303,14 +263,11 @@ class BeloteState : public State {
 
   std::array<Player, kNumPlayers> bid_turn_order_{};
   int bid_pointer_ = 0;
-  // Who has passed, per bidding round. `bid_pointer_` alone can't answer
-  // this: it resets to 0 between rounds, so without these
-  // the auction is unrecoverable from the state -- and a bid1 information
-  // state was byte-identical to the bid2 one that follows it (same 5 cards,
-  // same turned card, no trump yet), which is a perfect-recall violation: a
-  // player could not remember their own pass. Recorded in bid order, and
-  // kept through the play phase because who passed on which suit stays
-  // public, informative evidence about the hands still held.
+  // Who has passed, per bidding round, in bid order. Needed for perfect
+  // recall: `bid_pointer_` resets between rounds, which would leave a bid1
+  // information state byte-identical to the bid2 one that follows it (same
+  // 5 cards, same turned card, no trump yet). Kept through the play phase,
+  // where who passed on which suit is still evidence about the hands held.
   absl::InlinedVector<Player, kNumPlayers> bid1_passes_;
   absl::InlinedVector<Player, kNumPlayers> bid2_passes_;
 
@@ -320,18 +277,13 @@ class BeloteState : public State {
   Player belote_holder_ = kInvalidPlayer;
 
   Trick trick_;
-  Player trick_leader_ = kInvalidPlayer;
   Player current_player_play_ = kInvalidPlayer;
   int tricks_played_ = 0;
-  // At most kNumCards entries; never allocates on the heap.
   absl::InlinedVector<int, kNumCards> played_cards_;
-  // Cards of each completed trick, indexed [trick][seat position within
-  // that trick] (not by absolute player id -- see ReconstructTricks, which
-  // recovers the actual player via the trick's leader chain). Only the
-  // first tricks_played_ rows are populated.
+  // Indexed [trick][seat position within that trick], not by player id;
+  // ReconstructTricks recovers the player from the leader chain. Only the
+  // first tricks_played_ rows are populated, as for trick_winners_.
   std::array<std::array<int, kNumPlayers>, kNumTricks> trick_history_{};
-  // Winner of each completed trick; only the first tricks_played_ entries
-  // are populated.
   std::array<Player, kNumTricks> trick_winners_{};
   std::array<int, 2> team_points_ = {0, 0};
   std::array<double, kNumPlayers> returns_{};
@@ -344,8 +296,7 @@ class BeloteGame : public Game {
   int NumDistinctActions() const override { return kNumDistinctActions; }
   int MaxChanceOutcomes() const override { return kNumCards; }
   std::unique_ptr<State> NewInitialState() const override {
-    return std::unique_ptr<State>(
-        new BeloteState(shared_from_this(), dealer_));
+    return std::unique_ptr<State>(new BeloteState(shared_from_this(), dealer_));
   }
   int NumPlayers() const override { return kNumPlayers; }
   // Loose bounds that also cover a capot (252 instead of 162) and the
