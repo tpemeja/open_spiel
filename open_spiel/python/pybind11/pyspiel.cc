@@ -45,6 +45,7 @@
 #include "open_spiel/python/pybind11/game_transforms.h"
 #include "open_spiel/python/pybind11/games_backgammon.h"
 #include "open_spiel/python/pybind11/games_bargaining.h"
+#include "open_spiel/python/pybind11/games_belote.h"
 #include "open_spiel/python/pybind11/games_blackjack.h"
 #include "open_spiel/python/pybind11/games_bridge.h"
 #include "open_spiel/python/pybind11/games_catch.h"
@@ -850,6 +851,7 @@ PYBIND11_MODULE(pyspiel, m) {
   // Game-specific functions.
   init_pyspiel_games_backgammon(m);
   init_pyspiel_games_bargaining(m);
+  init_pyspiel_games_belote(m);
   init_pyspiel_games_blackjack(m);
   init_pyspiel_games_bridge(m);
   init_pyspiel_games_catch(m);

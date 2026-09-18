@@ -41,6 +41,7 @@ EXPECTED_MANDATORY_GAMES = frozenset([
     "banqi",
     "bargaining",
     "battleship",
+    "belote",
     "blackjack",
     "blotto",
     "breakthrough",
